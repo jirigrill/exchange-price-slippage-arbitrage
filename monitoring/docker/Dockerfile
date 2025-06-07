@@ -14,7 +14,8 @@ RUN pip install uv
 # Copy project files
 COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src/
-COPY config.py main.py ./
+COPY config/ ./config/
+COPY main.py ./
 
 # Create logs directory
 RUN mkdir -p logs

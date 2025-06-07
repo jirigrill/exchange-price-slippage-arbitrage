@@ -42,7 +42,7 @@ def main():
         print()
         print("Examples:")
         print("  python test_runner.py unit -v")
-        print("  python test_runner.py tests/test_currency_converter.py")
+        print("  python test_runner.py tests/unit/test_currency_converter.py")
         return 0
 
     command = sys.argv[1]

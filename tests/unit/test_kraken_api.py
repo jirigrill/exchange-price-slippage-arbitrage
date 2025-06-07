@@ -5,7 +5,7 @@ Tests for the Kraken API client.
 import pytest
 from unittest.mock import patch, AsyncMock
 from aioresponses import aioresponses
-from src.kraken_api import KrakenAPI, get_kraken_btc_usd_price
+from src.apis.kraken_api import KrakenAPI, get_kraken_btc_usd_price
 
 
 @pytest.mark.unit
@@ -199,7 +199,7 @@ class TestKrakenAPI:
             assert "BTCUSD" in result["result"]
 
     @patch("time.time", return_value=1703254800)
-    @patch("src.kraken_api.KrakenAPI._generate_signature")
+    @patch("src.apis.kraken_api.KrakenAPI._generate_signature")
     async def test_authenticated_request(self, mock_signature, mock_time):
         """Test authenticated request creation"""
         mock_signature.return_value = "TEST_SIGNATURE"

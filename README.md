@@ -93,7 +93,7 @@ Highest: coinmate - $105,724.46 USD
 
 ### Configuration
 
-Edit `config.py` or set environment variables in `.env`:
+Edit `config/settings.py` or set environment variables in `.env`:
 
 ```python
 # Minimum profit threshold (percentage)
@@ -117,31 +117,57 @@ COINMATE_CLIENT_ID=your_coinmate_client_id
 
 ## Project Structure
 
+### Current Structure
+
 ```
 ├── src/
-│   ├── exchange_monitor.py     # Real-time price monitoring
-│   ├── arbitrage_detector.py   # Arbitrage opportunity detection  
-│   ├── currency_converter.py   # USD/CZK conversion
-│   ├── coinmate_api.py         # Dedicated Coinmate API client
-│   └── kraken_api.py           # Dedicated Kraken API client
+│   ├── core/                   # Core business logic
+│   │   ├── __init__.py
+│   │   ├── arbitrage_detector.py  # Arbitrage opportunity detection
+│   │   └── exchange_monitor.py    # Real-time price monitoring
+│   ├── apis/                   # External API integrations
+│   │   ├── __init__.py
+│   │   ├── coinmate_api.py        # Dedicated Coinmate API client
+│   │   └── kraken_api.py          # Dedicated Kraken API client
+│   ├── services/               # Business services
+│   │   ├── __init__.py
+│   │   └── currency_converter.py  # USD/CZK conversion
+│   └── utils/                  # Shared utilities
+│       ├── __init__.py
+│       └── logging.py             # Logging utilities
+├── config/                     # Configuration files
+│   ├── __init__.py
+│   └── settings.py             # Configuration settings
 ├── tests/                      # Comprehensive test suite
-│   ├── conftest.py            # Shared test fixtures
-│   ├── test_arbitrage_detector.py
-│   ├── test_coinmate_api.py
-│   ├── test_kraken_api.py
-│   └── test_currency_converter.py
-├── monitoring/                 # Monitoring and logging
-│   └── logrotate.conf         # Log rotation configuration
-├── config.py                   # Configuration settings
+│   ├── unit/                   # Unit tests
+│   │   ├── conftest.py        # Shared test fixtures
+│   │   ├── test_arbitrage_detector.py
+│   │   ├── test_coinmate_api.py
+│   │   ├── test_kraken_api.py
+│   │   └── test_currency_converter.py
+│   └── integration/            # Integration tests
+├── monitoring/                 # Deployment and monitoring
+│   ├── docker/
+│   │   ├── Dockerfile         # Docker container definition
+│   │   └── docker-compose.yml # Docker Compose configuration
+│   ├── scripts/
+│   │   └── deploy.sh          # Simple deployment script
+│   └── logging/
+│       └── logrotate.conf     # Log rotation configuration
+├── docs/                       # Documentation
+│   └── DEPLOYMENT.md          # Deployment guide
 ├── main.py                     # Main application entry point
-├── deploy.sh                   # Simple deployment script
-├── Dockerfile                  # Docker container definition
-├── docker-compose.yml          # Docker Compose configuration
-├── DEPLOYMENT.md               # Deployment guide
 ├── test_runner.py              # Test runner script
 ├── pyproject.toml              # UV project configuration
 └── README.md                   # This file
 ```
+
+**Benefits of this structure:**
+- **Clear separation of concerns**: APIs, core logic, and utilities are isolated
+- **Scalability**: Easy to add new exchanges in `apis/` directory
+- **Maintainability**: Related files grouped together
+- **Testing organization**: Tests mirror source structure
+- **Configuration management**: All config in dedicated directory
 
 ## Supported Exchanges
 
@@ -158,9 +184,9 @@ COINMATE_CLIENT_ID=your_coinmate_client_id
 ### Adding More Exchanges
 
 The architecture supports easy expansion:
-1. Add exchange to `config.py` 
+1. Add exchange to `config/settings.py` 
 2. Specify trading pair in `EXCHANGE_TRADING_PAIRS`
-3. Create custom API client in `src/` directory
+3. Create custom API client in `src/apis/` directory
 4. Add support in `ExchangeMonitor.fetch_price()` method
 
 ## 🚀 Production Deployment
@@ -168,7 +194,7 @@ The architecture supports easy expansion:
 For continuous monitoring on your homeserver, deploy with Docker:
 
 ```bash
-./deploy.sh
+./monitoring/scripts/deploy.sh
 ```
 
 This includes:
@@ -178,7 +204,7 @@ This includes:
 - ✅ Resource limits
 - ✅ Security hardening
 
-See [**DEPLOYMENT.md**](DEPLOYMENT.md) for detailed setup guide.
+See [**DEPLOYMENT.md**](docs/DEPLOYMENT.md) for detailed setup guide.
 
 ## Risk Warnings
 

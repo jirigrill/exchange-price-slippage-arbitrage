@@ -1,8 +1,8 @@
 import asyncio
-from src.exchange_monitor import ExchangeMonitor
-from src.arbitrage_detector import ArbitrageDetector
-from src.utils import log_with_timestamp
-from config import (
+from src.core.exchange_monitor import ExchangeMonitor
+from src.core.arbitrage_detector import ArbitrageDetector
+from src.utils.logging import log_with_timestamp
+from config.settings import (
     ALL_EXCHANGES,
     TRADING_SYMBOL,
     MIN_PROFIT_PERCENTAGE,

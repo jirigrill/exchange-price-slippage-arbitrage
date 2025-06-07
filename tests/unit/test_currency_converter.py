@@ -4,7 +4,7 @@ Tests for the currency converter module.
 
 import pytest
 from unittest.mock import patch, AsyncMock
-from src.currency_converter import CurrencyConverter
+from src.services.currency_converter import CurrencyConverter
 
 
 @pytest.mark.unit
@@ -40,7 +40,7 @@ class TestCurrencyConverter:
         result = await converter.convert_to_usd(100.0, "USDT")
         assert result == 100.0
 
-    @patch("src.currency_converter.CurrencyConverter._update_exchange_rates")
+    @patch("src.services.currency_converter.CurrencyConverter._update_exchange_rates")
     async def test_get_exchange_rate_with_cache(self, mock_update):
         """Test exchange rate retrieval with caching"""
         converter = CurrencyConverter()

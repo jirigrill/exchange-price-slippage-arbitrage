@@ -4,8 +4,8 @@ Tests for the arbitrage detector module.
 
 import pytest
 from unittest.mock import MagicMock
-from src.arbitrage_detector import ArbitrageDetector, ArbitrageOpportunity
-from src.exchange_monitor import ExchangeMonitor
+from src.core.arbitrage_detector import ArbitrageDetector, ArbitrageOpportunity
+from src.core.exchange_monitor import ExchangeMonitor
 
 
 @pytest.mark.unit

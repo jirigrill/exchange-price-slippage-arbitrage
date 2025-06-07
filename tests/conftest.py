@@ -5,8 +5,8 @@ Shared pytest fixtures for the arbitrage testing suite.
 import pytest
 import asyncio
 from unittest.mock import MagicMock
-from src.exchange_monitor import PriceData
-from src.currency_converter import CurrencyConverter
+from src.core.exchange_monitor import PriceData
+from src.services.currency_converter import CurrencyConverter
 
 
 @pytest.fixture

@@ -1,10 +1,10 @@
 import time
 from typing import Dict, List, Optional
 from dataclasses import dataclass
-from .currency_converter import CurrencyConverter
-from .coinmate_api import CoinmateAPI
-from .kraken_api import KrakenAPI
-from .utils import log_with_timestamp
+from ..services.currency_converter import CurrencyConverter
+from ..apis.coinmate_api import CoinmateAPI
+from ..apis.kraken_api import KrakenAPI
+from ..utils.logging import log_with_timestamp
 
 
 @dataclass

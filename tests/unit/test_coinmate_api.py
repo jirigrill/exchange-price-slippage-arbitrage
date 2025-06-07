@@ -5,7 +5,7 @@ Tests for the Coinmate API client.
 import pytest
 from unittest.mock import patch, AsyncMock
 from aioresponses import aioresponses
-from src.coinmate_api import CoinmateAPI, get_coinmate_btc_czk_price
+from src.apis.coinmate_api import CoinmateAPI, get_coinmate_btc_czk_price
 
 
 @pytest.mark.unit
@@ -116,7 +116,7 @@ class TestCoinmateAPI:
             assert "BTC_CZK" in result["data"]
 
     @patch("time.time", return_value=1703254800)
-    @patch("src.coinmate_api.CoinmateAPI._generate_signature")
+    @patch("src.apis.coinmate_api.CoinmateAPI._generate_signature")
     async def test_authenticated_request(self, mock_signature, mock_time):
         """Test authenticated request creation"""
         mock_signature.return_value = "TEST_SIGNATURE"
