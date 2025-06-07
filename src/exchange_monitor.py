@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from .currency_converter import CurrencyConverter
 from .coinmate_api import CoinmateAPI
 from .kraken_api import KrakenAPI
+from .utils import log_with_timestamp
 
 
 @dataclass
@@ -35,9 +36,9 @@ class ExchangeMonitor:
 
         for exchange_name in exchanges:
             try:
-                print(f"✓ Initialized {exchange_name}")
+                log_with_timestamp(f"✓ Initialized {exchange_name}")
             except Exception as e:
-                print(f"✗ Error initializing {exchange_name}: {e}")
+                log_with_timestamp(f"✗ Error initializing {exchange_name}: {e}")
 
     async def fetch_price(self, exchange_name: str) -> Optional[PriceData]:
         # Get the trading pair for this exchange
@@ -49,7 +50,7 @@ class ExchangeMonitor:
         elif exchange_name == "kraken":
             price_data = await self._fetch_price_kraken_api(trading_pair)
         else:
-            print(f"✗ Exchange {exchange_name} not supported")
+            log_with_timestamp(f"✗ Exchange {exchange_name} not supported")
             return None
 
         if price_data:
@@ -82,7 +83,7 @@ class ExchangeMonitor:
                         price, quote_currency
                     )
                     if price_usd is None:
-                        print(
+                        log_with_timestamp(
                             f"⚠ Could not convert {quote_currency} to USD for coinmate"
                         )
                         price_usd = price  # Fallback to original price
@@ -97,7 +98,7 @@ class ExchangeMonitor:
                         volume=float(data.get("amount", 0)),
                     )
 
-                    print(
+                    log_with_timestamp(
                         f"✓ Coinmate API: {trading_pair} = {price} {quote_currency} (${price_usd:.2f} USD)"
                     )
                     return price_data
@@ -107,10 +108,10 @@ class ExchangeMonitor:
                         if ticker_data
                         else "No response"
                     )
-                    print(f"✗ Coinmate API error: {error_msg}")
+                    log_with_timestamp(f"✗ Coinmate API error: {error_msg}")
 
         except Exception as e:
-            print(f"✗ Coinmate API error: {e}")
+            log_with_timestamp(f"✗ Coinmate API error: {e}")
 
         return None
 
@@ -152,7 +153,7 @@ class ExchangeMonitor:
                                 price, quote_currency
                             )
                             if price_usd is None:
-                                print(
+                                log_with_timestamp(
                                     f"⚠ Could not convert {quote_currency} to USD for kraken"
                                 )
                                 price_usd = price  # Fallback to original price
@@ -167,7 +168,7 @@ class ExchangeMonitor:
                                 volume=volume,
                             )
 
-                            print(
+                            log_with_timestamp(
                                 f"✓ Kraken API: {trading_pair} = {price} {quote_currency} (${price_usd:.2f} USD)"
                             )
                             return price_data
@@ -177,10 +178,10 @@ class ExchangeMonitor:
                         if ticker_data
                         else "No response"
                     )
-                    print(f"✗ Kraken API error: {error_msg}")
+                    log_with_timestamp(f"✗ Kraken API error: {error_msg}")
 
         except Exception as e:
-            print(f"✗ Kraken API error: {e}")
+            log_with_timestamp(f"✗ Kraken API error: {e}")
 
         return None
 
