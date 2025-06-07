@@ -23,7 +23,7 @@ The system automatically converts all prices to USD for accurate comparison and 
 - ✅ **Multi-Exchange Support**: Kraken (international) + Coinmate (Czech)
 - ✅ **Multi-Currency Handling**: BTC/USD and BTC/CZK with automatic USD conversion
 - ✅ **Real-Time Exchange Rates**: Live currency conversion via external API
-- ✅ **Dedicated APIs**: Custom Kraken API integration + Custom Coinmate API
+- ✅ **Native APIs**: Direct Kraken and Coinmate API integration (no third-party libraries)
 - ✅ **Arbitrage Detection**: Automated opportunity identification with profit calculations
 - ✅ **Fee Accounting**: Trading fees included in profit calculations
 - ✅ **Async Architecture**: Efficient concurrent price monitoring
@@ -130,8 +130,14 @@ COINMATE_CLIENT_ID=your_coinmate_client_id
 │   ├── test_coinmate_api.py
 │   ├── test_kraken_api.py
 │   └── test_currency_converter.py
+├── monitoring/                 # Monitoring and logging
+│   └── logrotate.conf         # Log rotation configuration
 ├── config.py                   # Configuration settings
 ├── main.py                     # Main application entry point
+├── deploy.sh                   # Simple deployment script
+├── Dockerfile                  # Docker container definition
+├── docker-compose.yml          # Docker Compose configuration
+├── DEPLOYMENT.md               # Deployment guide
 ├── test_runner.py              # Test runner script
 ├── pyproject.toml              # UV project configuration
 └── README.md                   # This file
@@ -154,7 +160,25 @@ COINMATE_CLIENT_ID=your_coinmate_client_id
 The architecture supports easy expansion:
 1. Add exchange to `config.py` 
 2. Specify trading pair in `EXCHANGE_TRADING_PAIRS`
-3. Create custom API client (recommended) or use CCXT
+3. Create custom API client in `src/` directory
+4. Add support in `ExchangeMonitor.fetch_price()` method
+
+## 🚀 Production Deployment
+
+For continuous monitoring on your homeserver, deploy with Docker:
+
+```bash
+./deploy.sh
+```
+
+This includes:
+- ✅ Automatic restarts on failure
+- ✅ Log rotation and monitoring  
+- ✅ Health checks
+- ✅ Resource limits
+- ✅ Security hardening
+
+See [**DEPLOYMENT.md**](DEPLOYMENT.md) for detailed setup guide.
 
 ## Risk Warnings
 
@@ -218,7 +242,7 @@ uv run flake8 .
 
 ### Key Features
 - **Multi-currency support**: USD, CZK conversion
-- **Dedicated APIs**: Custom Kraken API client + Custom Coinmate API client
+- **Native APIs**: Direct Kraken and Coinmate API clients (no third-party dependencies)
 - **Real-time data**: Live exchange rates and price monitoring
 - **Comprehensive testing**: 53 tests covering all components
 

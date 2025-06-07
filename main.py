@@ -27,8 +27,7 @@ async def main():
             try:
                 tasks = []
                 for exchange_name in monitor.exchanges:
-                    if exchange_name in monitor.exchange_instances:
-                        tasks.append(monitor.fetch_price(exchange_name))
+                    tasks.append(monitor.fetch_price(exchange_name))
 
                 if tasks:
                     await asyncio.gather(*tasks, return_exceptions=True)
@@ -51,10 +50,10 @@ async def main():
                 spread_data = monitor.get_price_spread()
                 if spread_data:
                     active_exchanges = monitor.get_active_exchanges()
-                    initialized_exchanges = monitor.get_initialized_exchanges()
+                    all_exchanges = monitor.exchanges
 
                     print(
-                        f"Active exchanges ({len(active_exchanges)}/{len(initialized_exchanges)}): {', '.join(active_exchanges)}"
+                        f"Active exchanges ({len(active_exchanges)}/{len(all_exchanges)}): {', '.join(active_exchanges)}"
                     )
 
                     print(
@@ -69,13 +68,13 @@ async def main():
                     )
                 else:
                     active_exchanges = monitor.get_active_exchanges()
-                    initialized_exchanges = monitor.get_initialized_exchanges()
+                    all_exchanges = monitor.exchanges
                     inactive_exchanges = [
-                        ex for ex in initialized_exchanges if ex not in active_exchanges
+                        ex for ex in all_exchanges if ex not in active_exchanges
                     ]
 
                     print(
-                        f"Active exchanges ({len(active_exchanges)}/{len(initialized_exchanges)}): {', '.join(active_exchanges)}"
+                        f"Active exchanges ({len(active_exchanges)}/{len(all_exchanges)}): {', '.join(active_exchanges)}"
                     )
                     if inactive_exchanges:
                         print(f"Inactive exchanges: {', '.join(inactive_exchanges)}")

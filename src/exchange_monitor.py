@@ -1,6 +1,5 @@
 import time
 from typing import Dict, List, Optional
-import ccxt.async_support as ccxt
 from dataclasses import dataclass
 from .currency_converter import CurrencyConverter
 from .coinmate_api import CoinmateAPI
@@ -30,36 +29,13 @@ class ExchangeMonitor:
         self.symbol = symbol
         self.trading_pairs = trading_pairs  # Exchange-specific trading pairs
         self.api_keys = api_keys or {}
-        self.exchange_instances = {}
         self.latest_prices = {}
         self.price_history = []
         self.currency_converter = CurrencyConverter()
 
         for exchange_name in exchanges:
             try:
-                exchange_class = getattr(ccxt, exchange_name)
-                config = {
-                    "enableRateLimit": True,
-                }
-
-                exchange_instance = exchange_class(config)
-
-                if hasattr(exchange_instance, "sandbox") and exchange_instance.urls.get(
-                    "test"
-                ):
-                    try:
-                        exchange_instance.set_sandbox_mode(True)
-                        print(f"✓ Enabled sandbox mode for {exchange_name}")
-                    except:
-                        print(
-                            f"⚠ Sandbox mode not available for {exchange_name}, using live API"
-                        )
-
-                self.exchange_instances[exchange_name] = exchange_instance
                 print(f"✓ Initialized {exchange_name}")
-
-            except AttributeError:
-                print(f"✗ Exchange {exchange_name} not supported by ccxt")
             except Exception as e:
                 print(f"✗ Error initializing {exchange_name}: {e}")
 
@@ -67,60 +43,20 @@ class ExchangeMonitor:
         # Get the trading pair for this exchange
         trading_pair = self.trading_pairs.get(exchange_name, self.symbol)
 
-        # Use specialized APIs for specific exchanges
+        # Use dedicated APIs for each exchange
         if exchange_name == "coinmate":
             price_data = await self._fetch_price_coinmate_api(trading_pair)
         elif exchange_name == "kraken":
             price_data = await self._fetch_price_kraken_api(trading_pair)
         else:
-            # Use CCXT for other exchanges
-            price_data = await self._fetch_price_ccxt(exchange_name, trading_pair)
+            print(f"✗ Exchange {exchange_name} not supported")
+            return None
 
         if price_data:
             self.latest_prices[exchange_name] = price_data
             self.price_history.append(price_data)
 
         return price_data
-
-    async def _fetch_price_ccxt(
-        self, exchange_name: str, trading_pair: str
-    ) -> Optional[PriceData]:
-        """Fetch price using CCXT library"""
-        try:
-            if exchange_name not in self.exchange_instances:
-                return None
-
-            exchange = self.exchange_instances[exchange_name]
-            ticker = await exchange.fetch_ticker(trading_pair)
-
-            price = ticker["last"]
-            quote_currency = trading_pair.split("/")[1]
-
-            # Convert to USD if needed
-            price_usd = await self.currency_converter.convert_to_usd(
-                price, quote_currency
-            )
-            if price_usd is None:
-                print(
-                    f"⚠ Could not convert {quote_currency} to USD for {exchange_name}"
-                )
-                price_usd = price  # Fallback to original price
-
-            price_data = PriceData(
-                exchange=exchange_name,
-                symbol=trading_pair,
-                price=price,
-                price_usd=price_usd,
-                original_currency=quote_currency,
-                timestamp=time.time(),
-                volume=ticker.get("baseVolume", 0),
-            )
-
-            return price_data
-
-        except Exception as e:
-            print(f"✗ CCXT error for {exchange_name}: {e}")
-            return None
 
     async def _fetch_price_coinmate_api(self, trading_pair: str) -> Optional[PriceData]:
         """Fetch price using Coinmate API directly"""
@@ -290,12 +226,7 @@ class ExchangeMonitor:
         """Get list of exchanges that have provided price data"""
         return list(self.latest_prices.keys())
 
-    def get_initialized_exchanges(self) -> List[str]:
-        """Get list of exchanges that were successfully initialized"""
-        return list(self.exchange_instances.keys())
 
     async def close(self):
-        """Close all exchange connections"""
-        for exchange in self.exchange_instances.values():
-            if hasattr(exchange, "close"):
-                await exchange.close()
+        """Close all exchange connections (not needed for direct API calls)"""
+        pass
