@@ -1,6 +1,7 @@
 import aiohttp
 from typing import Dict, Optional
 import time
+from ..utils.logging import log_with_timestamp
 
 
 class CurrencyConverter:
@@ -53,12 +54,12 @@ class CurrencyConverter:
                             self.exchange_rates["EUR/CZK"] = 1.0 / czk_to_eur
 
                         self.last_update = time.time()
-                        print(
+                        log_with_timestamp(
                             f"✓ Updated exchange rates (CZK/USD: {self.exchange_rates.get('CZK/USD', 'N/A'):.4f})"
                         )
 
         except Exception as e:
-            print(f"✗ Error updating exchange rates: {e}")
+            log_with_timestamp(f"✗ Error updating exchange rates: {e}")
 
     async def convert_to_usd(
         self, amount: float, from_currency: str

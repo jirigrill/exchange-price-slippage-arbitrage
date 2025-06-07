@@ -5,6 +5,7 @@ import time
 import base64
 import urllib.parse
 from typing import Dict, Optional, Any
+from ..utils.logging import log_with_timestamp
 
 
 class KrakenAPI:
@@ -94,7 +95,7 @@ class KrakenAPI:
                             return await response.json()
 
         except Exception as e:
-            print(f"✗ Kraken API error: {e}")
+            log_with_timestamp(f"✗ Kraken API error: {e}")
             return None
 
     async def get_ticker(self, pair: str = "BTCUSD") -> Optional[Dict]:

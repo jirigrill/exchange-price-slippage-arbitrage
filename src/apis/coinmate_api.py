@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import time
 from typing import Dict, Optional, Any
+from ..utils.logging import log_with_timestamp
 
 
 class CoinmateAPI:
@@ -86,7 +87,7 @@ class CoinmateAPI:
                         return await response.json()
 
         except Exception as e:
-            print(f"✗ Coinmate API error: {e}")
+            log_with_timestamp(f"✗ Coinmate API error: {e}")
             return None
 
     async def get_ticker(self, currency_pair: str = "BTC_CZK") -> Optional[Dict]:

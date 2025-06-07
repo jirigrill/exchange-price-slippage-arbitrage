@@ -146,16 +146,13 @@ COINMATE_CLIENT_ID=your_coinmate_client_id
 │   │   ├── test_kraken_api.py
 │   │   └── test_currency_converter.py
 │   └── integration/            # Integration tests
-├── monitoring/                 # Deployment and monitoring
-│   ├── docker/
-│   │   ├── Dockerfile         # Docker container definition
-│   │   └── docker-compose.yml # Docker Compose configuration
-│   ├── scripts/
-│   │   └── deploy.sh          # Simple deployment script
-│   └── logging/
-│       └── logrotate.conf     # Log rotation configuration
+├── monitoring/                 # Monitoring and logging
+│   └── logrotate.conf         # Log rotation configuration
 ├── docs/                       # Documentation
 │   └── DEPLOYMENT.md          # Deployment guide
+├── Dockerfile                  # Docker container definition
+├── docker-compose.yml          # Docker Compose configuration
+├── deploy.sh                   # Simple deployment script
 ├── main.py                     # Main application entry point
 ├── test_runner.py              # Test runner script
 ├── pyproject.toml              # UV project configuration
@@ -194,7 +191,7 @@ The architecture supports easy expansion:
 For continuous monitoring on your homeserver, deploy with Docker:
 
 ```bash
-./monitoring/scripts/deploy.sh
+./deploy.sh
 ```
 
 This includes:
