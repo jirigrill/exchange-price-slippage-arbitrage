@@ -26,6 +26,7 @@ The system automatically converts all prices to USD for accurate comparison and 
 - ✅ **Native APIs**: Direct Kraken and Coinmate API integration (no third-party libraries)
 - ✅ **Arbitrage Detection**: Automated opportunity identification with profit calculations
 - ✅ **Fee Accounting**: Trading fees included in profit calculations
+- ✅ **Telegram Notifications**: Instant alerts for profitable opportunities
 - ✅ **Async Architecture**: Efficient concurrent price monitoring
 - ✅ **Comprehensive Testing**: Full pytest suite with 53 tests
 - ✅ **Environment Configuration**: Flexible setup via environment variables
@@ -98,12 +99,34 @@ Edit `config/settings.py` or set environment variables in `.env`:
 ```python
 # Minimum profit threshold (percentage)
 MIN_PROFIT_PERCENTAGE = 0.1
+
+# Telegram alert threshold (percentage)
+TELEGRAM_ALERT_THRESHOLD = 0.5
 ```
 
-### API Keys (Optional)
+### Environment Variables
 
-For basic price monitoring, API keys are not required. However, for enhanced features, add your credentials to `.env`:
+Copy `.env.example` to `.env` and configure as needed:
 
+```bash
+cp .env.example .env
+```
+
+**Core Settings:**
+```bash
+# Minimum profit threshold for detection
+MIN_PROFIT_PERCENTAGE=0.1
+```
+
+**Telegram Notifications (Optional):**
+```bash
+# Get from @BotFather
+TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+TELEGRAM_CHAT_ID=123456789
+TELEGRAM_ALERT_THRESHOLD=0.5  # Send alerts for profits >= 0.5%
+```
+
+**Exchange API Keys (Optional):**
 ```bash
 # Kraken (for private endpoints)
 KRAKEN_API_KEY=your_kraken_api_key
@@ -113,6 +136,53 @@ KRAKEN_SECRET_KEY=your_kraken_secret_key
 COINMATE_API_KEY=your_coinmate_api_key
 COINMATE_SECRET_KEY=your_coinmate_secret_key
 COINMATE_CLIENT_ID=your_coinmate_client_id
+```
+
+**Note:** Basic price monitoring works without any configuration!
+
+## 📱 Telegram Notifications Setup
+
+Get instant alerts when profitable arbitrage opportunities are detected!
+
+### 1. Create a Telegram Bot
+
+1. Open Telegram and search for `@BotFather`
+2. Send `/newbot` and follow the instructions
+3. Choose a name and username for your bot
+4. Copy the bot token (looks like `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`)
+
+### 2. Get Your Chat ID
+
+1. Send a message to your bot
+2. Visit: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
+3. Look for `"chat":{"id":123456789}` in the response
+4. Copy the chat ID number
+
+### 3. Configure Environment Variables
+
+Add to your `.env` file:
+
+```bash
+TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+TELEGRAM_CHAT_ID=123456789
+TELEGRAM_ALERT_THRESHOLD=0.5  # Send alerts for profits >= 0.5%
+```
+
+### 4. Test Your Setup
+
+The application will automatically test the Telegram connection on startup and send you a test message.
+
+### Sample Alert Message
+
+```
+🚨 Arbitrage Opportunity Detected!
+
+💰 Profit: $127.45 (0.85%)
+📈 Buy: coinmate @ $42,350.00
+📉 Sell: kraken @ $42,477.45
+📊 Volume Limit: 2.5000 BTC
+
+⚡ Act quickly - prices change rapidly!
 ```
 
 ## Project Structure
@@ -131,7 +201,8 @@ COINMATE_CLIENT_ID=your_coinmate_client_id
 │   │   └── kraken_api.py          # Dedicated Kraken API client
 │   ├── services/               # Business services
 │   │   ├── __init__.py
-│   │   └── currency_converter.py  # USD/CZK conversion
+│   │   ├── currency_converter.py  # USD/CZK conversion
+│   │   └── telegram_service.py    # Telegram notifications
 │   └── utils/                  # Shared utilities
 │       ├── __init__.py
 │       └── logging.py             # Logging utilities

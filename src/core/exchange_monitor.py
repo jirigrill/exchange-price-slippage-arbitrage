@@ -227,7 +227,6 @@ class ExchangeMonitor:
         """Get list of exchanges that have provided price data"""
         return list(self.latest_prices.keys())
 
-
     async def close(self):
         """Close all exchange connections (not needed for direct API calls)"""
         pass
