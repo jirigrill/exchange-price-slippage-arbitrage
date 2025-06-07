@@ -11,11 +11,15 @@ from config import (
 
 
 async def main():
-    print("Starting Bitcoin Latency Arbitrage POC...")
-    print(f"Monitoring exchanges: {ALL_EXCHANGES}")
-    print(f"Trading symbol: {TRADING_SYMBOL}")
-    print(f"Minimum profit threshold: {MIN_PROFIT_PERCENTAGE}%")
+    print("🚀 Starting Bitcoin Latency Arbitrage POC...")
+    print(f"📊 Monitoring exchanges: {ALL_EXCHANGES}")
+    print(f"💰 Trading symbol: {TRADING_SYMBOL}")
+    print(f"📈 Minimum profit threshold: {MIN_PROFIT_PERCENTAGE}%")
     print("-" * 50)
+    
+    # Force flush output
+    import sys
+    sys.stdout.flush()
 
     monitor = ExchangeMonitor(
         ALL_EXCHANGES, EXCHANGE_TRADING_PAIRS, API_KEYS, TRADING_SYMBOL

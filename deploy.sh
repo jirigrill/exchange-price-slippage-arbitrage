@@ -13,6 +13,14 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
+# Check if Docker daemon is running
+if ! docker info &> /dev/null; then
+    echo "❌ Docker daemon is not running. Please start Docker:"
+    echo "   On macOS: Start Docker Desktop application"
+    echo "   On Linux: sudo systemctl start docker"
+    exit 1
+fi
+
 # Check if Docker Compose is installed
 if ! command -v docker-compose &> /dev/null; then
     echo "❌ Docker Compose is not installed. Please install Docker Compose first:"

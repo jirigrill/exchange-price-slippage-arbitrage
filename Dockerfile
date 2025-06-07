@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip install uv
 
 # Copy project files
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src/
 COPY config.py main.py ./
 
@@ -29,7 +29,7 @@ USER app
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import sys; sys.exit(0)"
+    CMD uv run python -c "import sys; sys.exit(0)"
 
-# Run the application
-CMD ["uv", "run", "python", "main.py"]
+# Run the application with unbuffered output
+CMD ["uv", "run", "python", "-u", "main.py"]

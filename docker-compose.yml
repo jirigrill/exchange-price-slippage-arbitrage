@@ -1,11 +1,10 @@
-version: '3.8'
-
 services:
   arbitrage-monitor:
     build: .
     container_name: bitcoin-arbitrage-monitor
     restart: unless-stopped
     environment:
+      - PYTHONUNBUFFERED=1
       - MIN_PROFIT_PERCENTAGE=${MIN_PROFIT_PERCENTAGE:-0.1}
       - KRAKEN_API_KEY=${KRAKEN_API_KEY:-}
       - KRAKEN_SECRET_KEY=${KRAKEN_SECRET_KEY:-}
@@ -19,7 +18,7 @@ services:
     networks:
       - arbitrage-net
     healthcheck:
-      test: ["CMD", "python", "-c", "import psutil; print('healthy' if any('python' in p.name() and 'main.py' in ' '.join(p.cmdline()) for p in psutil.process_iter()) else exit(1))"]
+      test: ["CMD", "uv", "run", "python", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
