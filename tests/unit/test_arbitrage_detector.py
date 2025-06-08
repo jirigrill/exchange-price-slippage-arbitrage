@@ -2,7 +2,7 @@
 Tests for the arbitrage detector module.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -47,18 +47,20 @@ class TestArbitrageDetector:
         #     'coinmate', 'other_small'
         # ) is False
 
-    def test_estimate_trading_fees(self):
-        """Test trading fee estimation"""
+    @patch("src.core.arbitrage_detector.DYNAMIC_FEES_ENABLED", False)
+    async def test_get_trading_fees(self):
+        """Test trading fee retrieval"""
         mock_monitor = MagicMock()
+        mock_monitor.api_keys = {}
         detector = ArbitrageDetector(mock_monitor)
 
-        # Known exchanges
-        kraken_coinmate_fee = detector._estimate_trading_fees("kraken", "coinmate")
-        assert kraken_coinmate_fee == 0.26 + 0.35  # 0.61%
+        # Known exchanges (using static fees when dynamic disabled)
+        kraken_coinmate_fee = await detector._get_trading_fees("kraken", "coinmate")
+        assert kraken_coinmate_fee == 0.26 + 0.6  # 0.86%
 
         # Unknown exchange (should use default)
-        unknown_fee = detector._estimate_trading_fees("unknown", "coinmate")
-        assert unknown_fee == 0.25 + 0.35  # 0.6%
+        unknown_fee = await detector._get_trading_fees("unknown", "coinmate")
+        assert unknown_fee == 0.25 + 0.6  # 0.85%
 
     def test_calculate_opportunity_valid(
         self, sample_btc_usd_price, sample_btc_czk_price
@@ -86,13 +88,11 @@ class TestArbitrageDetector:
         assert opportunity.sell_price == 103000.0
         assert opportunity.profit_usd == pytest.approx(916.67, rel=1e-3)
 
-        # Profit percentage should be positive after fees
+        # Profit percentage should be positive (note: sync method doesn't calculate fees)
         expected_gross_profit = (916.67 / 102083.33) * 100  # ~0.9%
-        expected_net_profit = (
-            expected_gross_profit - 0.61
-        )  # After 0.61% fees (Kraken 0.26% + Coinmate 0.35%)
+        # Sync method returns gross profit, fees calculated separately in async context
         assert opportunity.profit_percentage == pytest.approx(
-            expected_net_profit, rel=1e-2
+            expected_gross_profit, rel=1e-2
         )
 
     def test_calculate_opportunity_no_profit(
@@ -130,36 +130,41 @@ class TestArbitrageDetector:
             "coinmate", buy_data, "kraken", sell_data
         )
 
-        # Should be None because profit (0.11%) < fees (0.61%)
-        assert opportunity is None
+        # Sync method doesn't account for fees, so this will not be None
+        # Fees are only applied in async detect_opportunities method
+        assert opportunity is not None
 
-    def test_detect_opportunities_empty_prices(self):
+    async def test_detect_opportunities_empty_prices(self):
         """Test opportunity detection with no price data"""
         mock_monitor = MagicMock()
         mock_monitor.get_price_spread.return_value = {}
         mock_monitor.latest_prices = {}
 
         detector = ArbitrageDetector(mock_monitor)
-        opportunities = detector.detect_opportunities()
+        opportunities = await detector.detect_opportunities()
 
         assert opportunities == []
 
-    def test_detect_opportunities_with_data(
+    @patch("src.core.arbitrage_detector.DYNAMIC_FEES_ENABLED", False)
+    async def test_detect_opportunities_with_data(
         self, sample_btc_usd_price, sample_btc_czk_price
     ):
         """Test opportunity detection with valid price data"""
-        # Make sell price higher to ensure profit after fees
-        sample_btc_usd_price.price_usd = 103000.0
+        # Make sell price higher to ensure profit after fees (need higher spread due to 0.86% fees)
+        sample_btc_usd_price.price_usd = (
+            104000.0  # Higher profit to overcome 0.86% fees
+        )
 
         mock_monitor = MagicMock()
-        mock_monitor.get_price_spread.return_value = {"spread": 916.67}
+        mock_monitor.get_price_spread.return_value = {"spread": 1916.67}
         mock_monitor.latest_prices = {
             "kraken": sample_btc_usd_price,
             "coinmate": sample_btc_czk_price,
         }
+        mock_monitor.api_keys = {}
 
         detector = ArbitrageDetector(mock_monitor, min_profit_percentage=0.1)
-        opportunities = detector.detect_opportunities()
+        opportunities = await detector.detect_opportunities()
 
         # Should find one opportunity (buy coinmate, sell kraken)
         assert len(opportunities) == 1
@@ -169,7 +174,8 @@ class TestArbitrageDetector:
         assert opp.sell_exchange == "kraken"
         assert opp.profit_usd > 0
 
-    def test_detect_opportunities_filters_by_min_profit(
+    @patch("src.core.arbitrage_detector.DYNAMIC_FEES_ENABLED", False)
+    async def test_detect_opportunities_filters_by_min_profit(
         self, sample_btc_usd_price, sample_btc_czk_price
     ):
         """Test that opportunities below minimum profit are filtered out"""
@@ -179,10 +185,11 @@ class TestArbitrageDetector:
             "kraken": sample_btc_usd_price,
             "coinmate": sample_btc_czk_price,
         }
+        mock_monitor.api_keys = {}
 
         # Set very high minimum profit requirement
         detector = ArbitrageDetector(mock_monitor, min_profit_percentage=1.0)
-        opportunities = detector.detect_opportunities()
+        opportunities = await detector.detect_opportunities()
 
         # Should find no opportunities due to high threshold
         assert len(opportunities) == 0

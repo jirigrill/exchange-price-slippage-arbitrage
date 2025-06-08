@@ -139,9 +139,8 @@ class TestCoinmateAPI:
         api = CoinmateAPI("test_key", "test_secret", "test_client")
 
         nonce = "1703254800000"
-        data = {"amount": 0.1, "price": 2450000}
 
-        signature = api._generate_signature(nonce, data)
+        signature = api._generate_signature(nonce)
 
         # Signature should be a hex string
         assert isinstance(signature, str)
@@ -152,8 +151,8 @@ class TestCoinmateAPI:
         """Test signature generation without secret"""
         api = CoinmateAPI("test_key", None, "test_client")
 
-        with pytest.raises(ValueError, match="API secret required"):
-            api._generate_signature("123", {})
+        with pytest.raises(ValueError, match="Private key required"):
+            api._generate_signature("123")
 
 
 @pytest.mark.unit

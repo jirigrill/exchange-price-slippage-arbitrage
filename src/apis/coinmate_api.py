@@ -159,7 +159,7 @@ class CoinmateAPI:
             return None
 
         try:
-            endpoint = "tradingFees"
+            endpoint = "traderFees"
             # This endpoint requires authentication but may not be available
             fees_data = await self._make_request(
                 endpoint, "POST", {}, auth_required=True
@@ -183,7 +183,7 @@ class CoinmateAPI:
                 # Don't log 404 errors as they're expected for this endpoint
                 if fees_data is None:
                     log_with_timestamp(
-                        "⚠ Coinmate tradingFees endpoint not available (404)"
+                        "⚠ Coinmate traderFees endpoint not available (404)"
                     )
                 else:
                     error_msg = fees_data.get("errorMessage", "Unknown error")
