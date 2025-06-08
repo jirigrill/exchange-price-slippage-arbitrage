@@ -5,6 +5,8 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 
+from config.settings import COINMATE_TRADING_FEE
+
 from ..utils.logging import log_with_timestamp
 
 
@@ -128,6 +130,37 @@ class CoinmateAPI:
         """
         endpoint = "tradingPairs"
         return await self._make_request(endpoint, "GET", auth_required=False)
+
+    async def get_trading_fees(self, currency_pair: str = "BTC_CZK") -> Optional[float]:
+        """
+        Get trading fees for a specific currency pair
+        Public endpoint - returns maker fee percentage
+        """
+        try:
+            trading_pairs = await self.get_trading_pairs()
+            if trading_pairs and not trading_pairs.get("error", True):
+                data = trading_pairs.get("data", [])
+                for pair in data:
+                    if pair.get("name") == currency_pair:
+                        # Return maker fee as percentage
+                        maker_fee = pair.get("makerFee")
+                        if maker_fee is not None:
+                            return float(maker_fee)
+                        else:
+                            # If makerFee field not found, use configured fallback
+                            log_with_timestamp(
+                                f"⚠ No makerFee data found for {currency_pair}, using configured fee: {COINMATE_TRADING_FEE}%"  # noqa: E501
+                            )
+                            return COINMATE_TRADING_FEE
+
+                # If currency pair not found in data
+                log_with_timestamp(
+                    f"⚠ Currency pair {currency_pair} not found, using configured fee: {COINMATE_TRADING_FEE}%"  # noqa: E501
+                )
+                return COINMATE_TRADING_FEE
+        except Exception as e:
+            log_with_timestamp(f"✗ Coinmate fee fetch error: {e}")
+        return None
 
     # Authenticated endpoints (require API credentials)
 

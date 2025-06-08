@@ -10,20 +10,40 @@ class TelegramService:
     Telegram bot service for sending alerts about arbitrage opportunities
     """
 
-    def __init__(self, bot_token: Optional[str] = None, chat_id: Optional[str] = None):
+    def __init__(
+        self,
+        bot_token: Optional[str] = None,
+        chat_id: Optional[str] = None,
+        enabled: bool = True,
+    ):
         self.bot_token = bot_token
         self.chat_id = chat_id
         self.base_url = (
             f"https://api.telegram.org/bot{bot_token}" if bot_token else None
         )
-        self.enabled = bool(bot_token and chat_id)
 
+        # Determine why Telegram might be disabled
+        has_credentials = bool(bot_token and chat_id)
+        self.enabled = enabled and has_credentials
+
+        # Provide specific feedback about why Telegram is enabled/disabled
         if self.enabled:
             log_with_timestamp("✓ Telegram notifications enabled")
-        else:
+        elif not enabled:
             log_with_timestamp(
-                "⚠ Telegram notifications disabled " "(missing bot_token or chat_id)"
+                "⚠ Telegram notifications disabled (TELEGRAM_ENABLED=false)"
             )
+        elif not has_credentials:
+            missing_items = []
+            if not bot_token:
+                missing_items.append("BOT_TOKEN")
+            if not chat_id:
+                missing_items.append("CHAT_ID")
+            log_with_timestamp(
+                f"⚠ Telegram notifications disabled (missing {', '.join(missing_items)})"
+            )
+        else:
+            log_with_timestamp("⚠ Telegram notifications disabled (unknown reason)")
 
     async def send_message(self, message: str) -> bool:
         """Send a message to the configured Telegram chat"""

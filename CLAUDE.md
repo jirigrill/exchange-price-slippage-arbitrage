@@ -46,7 +46,7 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 
 **Business Logic** (`src/core/`):
 - `exchange_monitor.py` - Manages real-time price monitoring across exchanges, handles currency conversion
-- `arbitrage_detector.py` - Calculates arbitrage opportunities, applies trading fees, filters by profit thresholds
+- `arbitrage_detector.py` - Calculates arbitrage opportunities, applies configurable trading fees, filters by profit thresholds
 
 **Services** (`src/services/`):
 - `currency_converter.py` - Converts CZK to USD using live exchange rates
@@ -56,14 +56,16 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 - Exchange definitions: `LARGE_EXCHANGES` (Kraken), `SMALL_EXCHANGES` (Coinmate)
 - Trading pairs: `EXCHANGE_TRADING_PAIRS` maps exchanges to their specific pairs
 - Profit thresholds: `MIN_PROFIT_PERCENTAGE` (used for both detection and Telegram alerts)
+- Trading fees: Configurable per exchange (`KRAKEN_TRADING_FEE`, `COINMATE_TRADING_FEE`) with dynamic fetching option
+- Telegram control: `TELEGRAM_ENABLED` allows completely disabling notifications
 
 ### Data Flow
 
 1. `ExchangeMonitor` fetches prices from both exchanges simultaneously
 2. `CurrencyConverter` converts CZK prices to USD for comparison
-3. `ArbitrageDetector` calculates profit opportunities between exchange pairs
-4. `TelegramService` sends alerts for opportunities above the threshold
-5. Main loop logs all activity and continues monitoring
+3. `ArbitrageDetector` calculates profit opportunities between exchange pairs (including fee calculations)
+4. `TelegramService` sends alerts for opportunities above the threshold (if enabled)
+5. Main loop logs all activity including detailed fee calculations and continues monitoring
 
 ### Key Architecture Decisions
 
@@ -75,9 +77,11 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 ### Environment Configuration
 
 The system requires minimal configuration and works without API keys for basic monitoring:
-- `.env` file contains optional API keys and Telegram credentials
+- `.env` file contains optional API keys, trading fees, and Telegram credentials
 - All settings have sensible defaults in `config/settings.py`
-- Telegram notifications require `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (alerts sent for all detected opportunities)
+- Trading fees are configurable per exchange with optional dynamic fetching
+- Telegram notifications can be completely disabled via `TELEGRAM_ENABLED=false`
+- When enabled, Telegram requires `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (alerts sent for all detected opportunities)
 
 ### Testing Strategy
 

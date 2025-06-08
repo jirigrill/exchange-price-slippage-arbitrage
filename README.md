@@ -25,8 +25,8 @@ The system automatically converts all prices to USD for accurate comparison and 
 - ✅ **Real-Time Exchange Rates**: Live currency conversion via external API
 - ✅ **Native APIs**: Direct Kraken and Coinmate API integration (no third-party libraries)
 - ✅ **Arbitrage Detection**: Automated opportunity identification with profit calculations
-- ✅ **Fee Accounting**: Trading fees included in profit calculations
-- ✅ **Telegram Notifications**: Instant alerts for profitable opportunities
+- ✅ **Configurable Trading Fees**: Per-exchange fee configuration with optional dynamic fetching
+- ✅ **Telegram Notifications**: Instant alerts for profitable opportunities (can be disabled)
 - ✅ **Async Architecture**: Efficient concurrent price monitoring
 - ✅ **Comprehensive Testing**: Full pytest suite with 68 tests
 - ✅ **Environment Configuration**: Flexible setup via environment variables
@@ -139,14 +139,25 @@ cp .env.example .env
 ```bash
 # Minimum profit threshold for detection
 MIN_PROFIT_PERCENTAGE=0.1
+
+# Trading fee configuration (percentage)
+KRAKEN_TRADING_FEE=0.26
+COINMATE_TRADING_FEE=0.35
+DEFAULT_TRADING_FEE=0.25
+
+# Enable dynamic fee fetching from exchange APIs
+DYNAMIC_FEES_ENABLED=false
 ```
 
 **Telegram Notifications (Optional):**
 ```bash
+# Enable/disable Telegram notifications entirely
+TELEGRAM_ENABLED=true
 # Get from @BotFather
 TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 TELEGRAM_CHAT_ID=123456789
 # Note: Telegram alerts use the same threshold as MIN_PROFIT_PERCENTAGE
+# When TELEGRAM_ENABLED=false, enhanced logging shows why notifications are disabled
 ```
 
 **Exchange API Keys (Optional):**
@@ -186,6 +197,8 @@ Get instant alerts when profitable arbitrage opportunities are detected!
 Add to your `.env` file:
 
 ```bash
+# Enable/disable Telegram notifications
+TELEGRAM_ENABLED=true
 TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 TELEGRAM_CHAT_ID=123456789
 # Telegram alerts are sent for all detected opportunities
@@ -215,6 +228,11 @@ make run
 
 ⚡ Act quickly - prices change rapidly!
 ```
+
+**Note:** When `TELEGRAM_ENABLED=false`, the system provides enhanced console logging showing:
+- Detailed fee calculations for each exchange
+- Reasons why Telegram notifications are disabled
+- All arbitrage opportunities are still detected and logged
 
 ## Project Structure
 
@@ -349,6 +367,22 @@ Edit `.env` file with your settings:
 ```bash
 # Required
 MIN_PROFIT_PERCENTAGE=0.1
+
+# Trading fee configuration (percentage)
+# These are the default trading fees for each exchange
+KRAKEN_TRADING_FEE=0.26
+COINMATE_TRADING_FEE=0.35
+DEFAULT_TRADING_FEE=0.25
+
+# Enable dynamic fee fetching from exchange APIs
+# When enabled, tries to fetch real-time fees, falls back to configured values
+DYNAMIC_FEES_ENABLED=false
+
+# Telegram notifications
+# Set to false to disable Telegram notifications entirely
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_CHAT_ID=your_chat_id_here
 
 # Optional API keys for enhanced features
 KRAKEN_API_KEY=your_key_here

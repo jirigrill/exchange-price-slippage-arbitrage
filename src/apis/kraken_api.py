@@ -7,6 +7,8 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 
+from config.settings import KRAKEN_TRADING_FEE
+
 from ..utils.logging import log_with_timestamp
 
 
@@ -149,6 +151,39 @@ class KrakenAPI:
         """
         endpoint = "0/public/AssetPairs"
         return await self._make_request(endpoint, "GET", auth_required=False)
+
+    async def get_trading_fees(self, pair: str = "BTCUSD") -> Optional[float]:
+        """
+        Get trading fees for a specific pair
+        Public endpoint - returns maker fee percentage
+        """
+        try:
+            asset_pairs = await self.get_asset_pairs()
+            if asset_pairs and not asset_pairs.get("error"):
+                result = asset_pairs.get("result", {})
+                # Try different pair name formats for BTC/USD
+                pair_data = None
+                possible_names = [pair, "XXBTZUSD", "XBTUSD", "BTCUSD"]
+                for name in possible_names:
+                    if name in result:
+                        pair_data = result[name]
+                        break
+                if pair_data:
+                    # Return maker fee as percentage
+                    # Kraken returns fees_maker as [[volume, fee_percent], ...]
+                    fees_maker = pair_data.get("fees_maker")
+                    if fees_maker and len(fees_maker) > 0:
+                        # Use the lowest volume tier (index 0) fee, already in percentage
+                        return float(fees_maker[0][1])
+                    else:
+                        # If fees_maker field not found, use configured fallback
+                        log_with_timestamp(
+                            f"⚠ No fees_maker data found for {pair}, using configured fee: {KRAKEN_TRADING_FEE}%"  # noqa: E501
+                        )
+                        return KRAKEN_TRADING_FEE
+        except Exception as e:
+            log_with_timestamp(f"✗ Kraken fee fetch error: {e}")
+        return None
 
     # Authenticated endpoints (require API credentials)
 
