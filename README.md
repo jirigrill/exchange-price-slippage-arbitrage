@@ -50,6 +50,10 @@ This project uses [uv](https://github.com/astral-sh/uv) for dependency managemen
 
 2. **Install dependencies**
    ```bash
+   # Using Makefile (recommended)
+   make install
+   
+   # Or directly with uv
    uv sync
    ```
 
@@ -65,11 +69,30 @@ This project uses [uv](https://github.com/astral-sh/uv) for dependency managemen
 
 ## Usage
 
+### Quick Start with Makefile
+
+The easiest way to get started:
+
+```bash
+# Show all available commands
+make help
+
+# Quick development setup (install + format + test + run)
+make dev
+
+# Just run the monitor
+make run
+```
+
 ### Basic Monitoring
 
 Run the Bitcoin arbitrage monitor:
 
 ```bash
+# Using Makefile (recommended)
+make run
+
+# Or directly with uv
 uv run python main.py
 ```
 
@@ -174,10 +197,12 @@ TELEGRAM_ALERT_THRESHOLD=0.5  # Send alerts for profits >= 0.5%
 
 ```bash
 # Test Telegram integration manually
-uv run python tests/integration/test_telegram.py
+make telegram-test
+# Or: uv run python tests/integration/test_telegram.py
 
 # Or let the application test automatically on startup
-uv run python main.py
+make run
+# Or: uv run python main.py
 ```
 
 ### Sample Alert Message
@@ -277,6 +302,10 @@ The architecture supports easy expansion:
 For continuous monitoring on your homeserver, deploy with Docker:
 
 ```bash
+# Using Makefile (recommended)
+make docker-deploy
+
+# Or directly
 ./deploy.sh
 ```
 
@@ -306,13 +335,21 @@ See [**DEPLOYMENT.md**](docs/DEPLOYMENT.md) for detailed setup guide.
 The project includes a comprehensive test suite with 68 tests:
 
 ```bash
-# Run all tests
-uv run pytest
+# Using Makefile (recommended)
+make test                    # Run all tests
+make test-unit              # Run only unit tests (62 tests)
+make test-integration       # Run integration tests (6 tests)
+make test-coverage          # Run with coverage report
+make telegram-test          # Test Telegram integration
 
-# Use the test runner for organized testing
-uv run python tests/test_runner.py unit          # Run only unit tests (62 tests)
-uv run python tests/test_runner.py integration   # Run integration tests (6 tests)
-uv run python tests/test_runner.py all           # Run all tests
+# Quick pre-commit checks
+make check                  # format + lint + unit tests
+make ci                     # full CI pipeline
+
+# Or use direct commands
+uv run pytest              # Run all tests
+uv run python tests/test_runner.py unit          # Run only unit tests
+uv run python tests/test_runner.py integration   # Run integration tests
 uv run python tests/test_runner.py coverage      # Run with coverage report
 
 # Run with verbose output
@@ -321,9 +358,6 @@ uv run python tests/test_runner.py unit -v
 # Run specific test files
 uv run pytest tests/unit/test_coinmate_api.py
 uv run pytest tests/unit/test_telegram_service.py
-
-# Test Telegram integration manually (requires .env credentials)
-uv run python tests/integration/test_telegram.py
 
 # Show test runner help
 uv run python tests/test_runner.py
@@ -337,8 +371,14 @@ uv run python tests/test_runner.py
 ### Code Formatting
 
 ```bash
+# Using Makefile (recommended)
+make format                 # Format code with black
+make lint                   # Lint code with flake8 (excludes .venv)
+make clean                  # Clean cache and temp files
+
+# Or directly
 uv run black .
-uv run flake8 .
+uv run flake8 . --exclude=.venv
 ```
 
 ## Dependencies

@@ -4,23 +4,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Common Commands
 
+### Using Makefile (Recommended)
+- **Show all available commands**: `make help`
+- **Quick development setup**: `make dev` (install + format + test + run)
+- **Pre-commit checks**: `make check` (format + lint + unit tests)
+- **Full CI pipeline**: `make ci` (install + format + lint + all tests)
+
 ### Development
-- **Run the application**: `uv run python main.py`
-- **Install dependencies**: `uv sync`
-- **Format code**: `uv run black .`
-- **Lint code**: `uv run flake8 .`
+- **Install dependencies**: `make install` or `uv sync`
+- **Run the application**: `make run` or `uv run python main.py`
+- **Format code**: `make format` or `uv run black .`
+- **Lint code**: `make lint` or `uv run flake8 . --exclude=.venv`
+- **Clean cache files**: `make clean`
 
 ### Testing
-- **Run all tests**: `uv run pytest`
-- **Run unit tests only**: `uv run python tests/test_runner.py unit`
-- **Run integration tests**: `uv run python tests/test_runner.py integration`
-- **Run with coverage**: `uv run python tests/test_runner.py coverage`
+- **Run all tests**: `make test` or `uv run pytest`
+- **Run unit tests only**: `make test-unit` or `uv run python tests/test_runner.py unit`
+- **Run integration tests**: `make test-integration` or `uv run python tests/test_runner.py integration`
+- **Run with coverage**: `make test-coverage` or `uv run python tests/test_runner.py coverage`
+- **Test Telegram integration**: `make telegram-test` or `uv run python tests/integration/test_telegram.py`
 - **Run specific test file**: `uv run pytest tests/unit/test_coinmate_api.py`
-- **Test Telegram integration**: `uv run python tests/integration/test_telegram.py`
 
 ### Docker Deployment
-- **Deploy with Docker**: `./deploy.sh`
-- **Run with Docker Compose**: `docker-compose up -d`
+- **Build Docker image**: `make docker-build`
+- **Run with Docker Compose**: `make docker-run` or `docker-compose up -d`
+- **Deploy with production settings**: `make docker-deploy` or `./deploy.sh`
 
 ## Architecture Overview
 
