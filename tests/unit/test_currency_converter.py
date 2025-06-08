@@ -2,8 +2,10 @@
 Tests for the currency converter module.
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import patch, AsyncMock
+
 from src.services.currency_converter import CurrencyConverter
 
 

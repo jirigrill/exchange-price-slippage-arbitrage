@@ -1,6 +1,8 @@
-import aiohttp
-from typing import Dict, Optional
 import time
+from typing import Optional
+
+import aiohttp
+
 from ..utils.logging import log_with_timestamp
 
 
@@ -55,7 +57,8 @@ class CurrencyConverter:
 
                         self.last_update = time.time()
                         log_with_timestamp(
-                            f"✓ Updated exchange rates (CZK/USD: {self.exchange_rates.get('CZK/USD', 'N/A'):.4f})"
+                            f"✓ Updated exchange rates (CZK/USD: "
+                            f"{self.exchange_rates.get('CZK/USD', 'N/A'):.4f})"
                         )
 
         except Exception as e:

@@ -1,8 +1,10 @@
-import aiohttp
 import hashlib
 import hmac
 import time
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
+
+import aiohttp
+
 from ..utils.logging import log_with_timestamp
 
 
@@ -95,7 +97,7 @@ class CoinmateAPI:
         Get ticker data for a currency pair
         Public endpoint - no authentication required
         """
-        endpoint = f"ticker"
+        endpoint = "ticker"
         data = {"currencyPair": currency_pair}
         return await self._make_request(endpoint, "GET", data, auth_required=False)
 
@@ -104,7 +106,7 @@ class CoinmateAPI:
         Get order book for a currency pair
         Public endpoint - no authentication required
         """
-        endpoint = f"orderBook"
+        endpoint = "orderBook"
         data = {"currencyPair": currency_pair}
         return await self._make_request(endpoint, "GET", data, auth_required=False)
 
@@ -115,7 +117,7 @@ class CoinmateAPI:
         Get recent transactions
         Public endpoint - no authentication required
         """
-        endpoint = f"transactions"
+        endpoint = "transactions"
         data = {"currencyPair": currency_pair, "minutesIntoHistory": minutes_into_past}
         return await self._make_request(endpoint, "GET", data, auth_required=False)
 
@@ -124,7 +126,7 @@ class CoinmateAPI:
         Get available trading pairs
         Public endpoint - no authentication required
         """
-        endpoint = f"tradingPairs"
+        endpoint = "tradingPairs"
         return await self._make_request(endpoint, "GET", auth_required=False)
 
     # Authenticated endpoints (require API credentials)
@@ -134,7 +136,7 @@ class CoinmateAPI:
         Get account balance
         Requires authentication
         """
-        endpoint = f"balances"
+        endpoint = "balances"
         return await self._make_request(endpoint, "POST", auth_required=True)
 
     async def create_buy_order(
@@ -144,7 +146,7 @@ class CoinmateAPI:
         Create buy order
         Requires authentication
         """
-        endpoint = f"buyLimit"
+        endpoint = "buyLimit"
         data = {"amount": amount, "price": price, "currencyPair": currency_pair}
         return await self._make_request(endpoint, "POST", data, auth_required=True)
 
@@ -155,7 +157,7 @@ class CoinmateAPI:
         Create sell order
         Requires authentication
         """
-        endpoint = f"sellLimit"
+        endpoint = "sellLimit"
         data = {"amount": amount, "price": price, "currencyPair": currency_pair}
         return await self._make_request(endpoint, "POST", data, auth_required=True)
 
@@ -164,7 +166,7 @@ class CoinmateAPI:
         Cancel order
         Requires authentication
         """
-        endpoint = f"cancelOrder"
+        endpoint = "cancelOrder"
         data = {"orderId": order_id}
         return await self._make_request(endpoint, "POST", data, auth_required=True)
 
@@ -175,7 +177,7 @@ class CoinmateAPI:
         Get order history
         Requires authentication
         """
-        endpoint = f"orderHistory"
+        endpoint = "orderHistory"
         data = {"currencyPair": currency_pair, "limit": limit}
         return await self._make_request(endpoint, "POST", data, auth_required=True)
 

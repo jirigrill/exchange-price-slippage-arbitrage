@@ -1,10 +1,12 @@
-import aiohttp
+import base64
 import hashlib
 import hmac
 import time
-import base64
 import urllib.parse
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
+
+import aiohttp
+
 from ..utils.logging import log_with_timestamp
 
 
@@ -228,7 +230,8 @@ async def get_kraken_btc_usd_price() -> Optional[float]:
         ticker_data = await api.get_ticker("BTCUSD")
         if ticker_data and not ticker_data.get("error"):
             result = ticker_data.get("result", {})
-            # Kraken returns different pair names, try both BTCUSD and XBTUSD
+            # Kraken returns different pair names, try both
+            # BTCUSD and XBTUSD
             btc_data = result.get("BTCUSD") or result.get("XBTUSD")
             if btc_data:
                 # 'c' contains [price, volume] for last trade

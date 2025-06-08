@@ -2,9 +2,11 @@
 Tests for the Kraken API client.
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, AsyncMock
 from aioresponses import aioresponses
+
 from src.apis.kraken_api import KrakenAPI, get_kraken_btc_usd_price
 
 

@@ -2,10 +2,11 @@
 Tests for the arbitrage detector module.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from src.core.arbitrage_detector import ArbitrageDetector, ArbitrageOpportunity
-from src.core.exchange_monitor import ExchangeMonitor
 
 
 @pytest.mark.unit
@@ -37,10 +38,14 @@ class TestArbitrageDetector:
         assert detector._is_valid_arbitrage_pair("kraken", "kraken") is False
 
         # Invalid: both large (if we had multiple large exchanges)
-        # assert detector._is_valid_arbitrage_pair('binance', 'kraken') is False
+        # assert detector._is_valid_arbitrage_pair(
+        #     'binance', 'kraken'
+        # ) is False
 
         # Invalid: both small (if we had multiple small exchanges)
-        # assert detector._is_valid_arbitrage_pair('coinmate', 'other_small') is False
+        # assert detector._is_valid_arbitrage_pair(
+        #     'coinmate', 'other_small'
+        # ) is False
 
     def test_estimate_trading_fees(self):
         """Test trading fee estimation"""
@@ -68,7 +73,7 @@ class TestArbitrageDetector:
         sell_data = sample_btc_usd_price  # 102500.0 USD
 
         # Make sell price higher to ensure profit after fees
-        sell_data.price_usd = 103000.0  # Higher sell price for better profit margin
+        sell_data.price_usd = 103000.0  # Higher sell price
 
         opportunity = detector._calculate_opportunity(
             "coinmate", buy_data, "kraken", sell_data

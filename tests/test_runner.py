@@ -33,8 +33,10 @@ def main():
         print()
         print("Available commands:")
         print("  python test_runner.py unit          # Run only unit tests")
-        print("  python test_runner.py integration   # Run only integration tests")
-        print("  python test_runner.py slow          # Run slow tests (real API calls)")
+        print("  python test_runner.py integration   " "# Run only integration tests")
+        print(
+            "  python test_runner.py slow          " "# Run slow tests (real API calls)"
+        )
         print("  python test_runner.py coverage      # Run with coverage report")
         print("  python test_runner.py all           # Run all tests")
         print("  python test_runner.py -v            # Verbose output")

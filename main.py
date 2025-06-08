@@ -1,18 +1,20 @@
 import asyncio
-from src.core.exchange_monitor import ExchangeMonitor
-from src.core.arbitrage_detector import ArbitrageDetector
-from src.services.telegram_service import TelegramService
-from src.utils.logging import log_with_timestamp
+import sys
+
 from config.settings import (
     ALL_EXCHANGES,
-    TRADING_SYMBOL,
-    MIN_PROFIT_PERCENTAGE,
-    EXCHANGE_TRADING_PAIRS,
     API_KEYS,
+    EXCHANGE_TRADING_PAIRS,
+    MIN_PROFIT_PERCENTAGE,
+    TELEGRAM_ALERT_THRESHOLD,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
-    TELEGRAM_ALERT_THRESHOLD,
+    TRADING_SYMBOL,
 )
+from src.core.arbitrage_detector import ArbitrageDetector
+from src.core.exchange_monitor import ExchangeMonitor
+from src.services.telegram_service import TelegramService
+from src.utils.logging import log_with_timestamp
 
 
 async def main():
@@ -24,8 +26,6 @@ async def main():
     print("-" * 50)
 
     # Force flush output
-    import sys
-
     sys.stdout.flush()
 
     # Initialize services
@@ -85,20 +85,24 @@ async def main():
                     all_exchanges = monitor.exchanges
 
                     log_with_timestamp(
-                        f"Active exchanges ({len(active_exchanges)}/{len(all_exchanges)}): {', '.join(active_exchanges)}"
+                        f"Active exchanges "
+                        f"({len(active_exchanges)}/{len(all_exchanges)}): "
+                        f"{', '.join(active_exchanges)}"
                     )
 
                     log_with_timestamp(
-                        f"Current spread: ${spread_data['spread']:.2f} ({spread_data['spread_percentage']:.2f}%)"
+                        f"Current spread: ${spread_data['spread']:.2f} "
+                        f"({spread_data['spread_percentage']:.2f}%)"
                     )
 
                     lowest = spread_data["lowest"]
                     highest = spread_data["highest"]
                     log_with_timestamp(
-                        f"Lowest: {lowest['exchange']} - ${lowest['price']:.2f} USD"
+                        f"Lowest: {lowest['exchange']} - " f"${lowest['price']:.2f} USD"
                     )
                     log_with_timestamp(
-                        f"Highest: {highest['exchange']} - ${highest['price']:.2f} USD"
+                        f"Highest: {highest['exchange']} - "
+                        f"${highest['price']:.2f} USD"
                     )
                 else:
                     active_exchanges = monitor.get_active_exchanges()
@@ -108,7 +112,9 @@ async def main():
                     ]
 
                     log_with_timestamp(
-                        f"Active exchanges ({len(active_exchanges)}/{len(all_exchanges)}): {', '.join(active_exchanges)}"
+                        f"Active exchanges "
+                        f"({len(active_exchanges)}/{len(all_exchanges)}): "
+                        f"{', '.join(active_exchanges)}"
                     )
                     if inactive_exchanges:
                         log_with_timestamp(

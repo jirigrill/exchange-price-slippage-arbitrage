@@ -3,8 +3,7 @@ Shared pytest fixtures for the arbitrage testing suite.
 """
 
 import pytest
-import asyncio
-from unittest.mock import MagicMock
+
 from src.core.exchange_monitor import PriceData
 from src.services.currency_converter import CurrencyConverter
 
@@ -133,7 +132,7 @@ def high_spread_scenario():
     """Scenario with significant price difference"""
     return {
         "kraken": 102500.0,  # Normal international price
-        "coinmate": 2400000.0,  # Lower Czech price (good arbitrage opportunity)
+        "coinmate": 2400000.0,  # Lower Czech price
     }
 
 

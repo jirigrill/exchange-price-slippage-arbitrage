@@ -1,7 +1,8 @@
 import time
-from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
-from .exchange_monitor import PriceData, ExchangeMonitor
+from typing import List, Optional
+
+from .exchange_monitor import ExchangeMonitor, PriceData
 
 
 @dataclass

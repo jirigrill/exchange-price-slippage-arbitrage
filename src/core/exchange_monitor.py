@@ -1,9 +1,10 @@
 import time
-from typing import Dict, List, Optional
 from dataclasses import dataclass
-from ..services.currency_converter import CurrencyConverter
+from typing import Dict, List, Optional
+
 from ..apis.coinmate_api import CoinmateAPI
 from ..apis.kraken_api import KrakenAPI
+from ..services.currency_converter import CurrencyConverter
 from ..utils.logging import log_with_timestamp
 
 
@@ -84,7 +85,8 @@ class ExchangeMonitor:
                     )
                     if price_usd is None:
                         log_with_timestamp(
-                            f"⚠ Could not convert {quote_currency} to USD for coinmate"
+                            f"⚠ Could not convert {quote_currency} to "
+                            f"USD for coinmate"
                         )
                         price_usd = price  # Fallback to original price
 
@@ -99,7 +101,8 @@ class ExchangeMonitor:
                     )
 
                     log_with_timestamp(
-                        f"✓ Coinmate API: {trading_pair} = {price} {quote_currency} (${price_usd:.2f} USD)"
+                        f"✓ Coinmate API: {trading_pair} = {price} "
+                        f"{quote_currency} (${price_usd:.2f} USD)"
                     )
                     return price_data
                 else:
@@ -131,7 +134,8 @@ class ExchangeMonitor:
                 if ticker_data and not ticker_data.get("error"):
                     result = ticker_data.get("result", {})
 
-                    # Kraken uses different pair formats: XXBTZUSD, XBTUSD, BTCUSD
+                    # Kraken uses different pair formats:
+                    # XXBTZUSD, XBTUSD, BTCUSD
                     pair_data = (
                         result.get(kraken_pair)
                         or result.get("XXBTZUSD")
@@ -154,7 +158,8 @@ class ExchangeMonitor:
                             )
                             if price_usd is None:
                                 log_with_timestamp(
-                                    f"⚠ Could not convert {quote_currency} to USD for kraken"
+                                    f"⚠ Could not convert {quote_currency} to "
+                                    f"USD for kraken"
                                 )
                                 price_usd = price  # Fallback to original price
 
@@ -169,7 +174,8 @@ class ExchangeMonitor:
                             )
 
                             log_with_timestamp(
-                                f"✓ Kraken API: {trading_pair} = {price} {quote_currency} (${price_usd:.2f} USD)"
+                                f"✓ Kraken API: {trading_pair} = {price} "
+                                f"{quote_currency} (${price_usd:.2f} USD)"
                             )
                             return price_data
                 else:
@@ -229,4 +235,3 @@ class ExchangeMonitor:
 
     async def close(self):
         """Close all exchange connections (not needed for direct API calls)"""
-        pass

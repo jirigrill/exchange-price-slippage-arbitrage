@@ -1,11 +1,9 @@
-import pytest
-import asyncio
-from unittest.mock import Mock, patch, AsyncMock
 import aiohttp
+import pytest
 from aioresponses import aioresponses
 
-from src.services.telegram_service import TelegramService
 from src.core.arbitrage_detector import ArbitrageOpportunity
+from src.services.telegram_service import TelegramService
 
 
 class TestTelegramService:
@@ -218,8 +216,9 @@ class TestTelegramServiceIntegration:
     async def test_real_telegram_api_call(self):
         """Test real Telegram API call (requires valid credentials in environment)"""
         import os
+
         from dotenv import load_dotenv
-        
+
         # Load environment variables from .env file
         load_dotenv()
 
@@ -243,8 +242,9 @@ class TestTelegramServiceIntegration:
     async def test_real_arbitrage_alert(self):
         """Test real arbitrage alert (requires valid credentials)"""
         import os
+
         from dotenv import load_dotenv
-        
+
         # Load environment variables from .env file
         load_dotenv()
 

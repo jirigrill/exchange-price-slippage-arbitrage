@@ -8,11 +8,13 @@ import asyncio
 import os
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from src.services.telegram_service import TelegramService
-from src.core.arbitrage_detector import ArbitrageOpportunity
 from dotenv import load_dotenv
+
+from src.core.arbitrage_detector import ArbitrageOpportunity
+from src.services.telegram_service import TelegramService
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 
 async def main():

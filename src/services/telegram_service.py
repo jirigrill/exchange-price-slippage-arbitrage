@@ -1,6 +1,7 @@
-import aiohttp
-import asyncio
 from typing import Optional
+
+import aiohttp
+
 from ..utils.logging import log_with_timestamp
 
 
@@ -21,7 +22,7 @@ class TelegramService:
             log_with_timestamp("✓ Telegram notifications enabled")
         else:
             log_with_timestamp(
-                "⚠ Telegram notifications disabled (missing bot_token or chat_id)"
+                "⚠ Telegram notifications disabled " "(missing bot_token or chat_id)"
             )
 
     async def send_message(self, message: str) -> bool:
@@ -48,7 +49,8 @@ class TelegramService:
                     else:
                         error_text = await response.text()
                         log_with_timestamp(
-                            f"✗ Telegram API error: {response.status} - {error_text}"
+                            f"✗ Telegram API error: {response.status} - "
+                            f"{error_text}"
                         )
                         return False
 
@@ -64,7 +66,8 @@ class TelegramService:
         # Format the message with arbitrage details
         message = f"""🚨 *Arbitrage Opportunity Detected!*
 
-💰 *Profit*: ${opportunity.profit_usd:.2f} ({opportunity.profit_percentage:.2f}%)
+💰 *Profit*: ${opportunity.profit_usd:.2f} \
+({opportunity.profit_percentage:.2f}%)
 📈 *Buy*: {opportunity.buy_exchange} @ ${opportunity.buy_price:.2f}
 📉 *Sell*: {opportunity.sell_exchange} @ ${opportunity.sell_price:.2f}
 📊 *Volume Limit*: {opportunity.volume_limit:.4f} BTC
@@ -88,7 +91,7 @@ class TelegramService:
             return False
 
         test_message = (
-            "🧪 *Test Message*\n\nBitcoin Arbitrage Monitor is online and ready!"
+            "🧪 *Test Message*\n\n" "Bitcoin Arbitrage Monitor is online and ready!"
         )
         success = await self.send_message(test_message)
 
