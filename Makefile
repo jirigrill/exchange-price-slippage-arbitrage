@@ -1,4 +1,4 @@
-.PHONY: help install run test test-unit test-integration test-coverage format lint clean docker-build docker-run docker-deploy telegram-test
+.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test
 
 # Default target
 help:
@@ -10,6 +10,7 @@ help:
 	@echo "  run              Run the arbitrage monitor"
 	@echo "  format           Format code with black"
 	@echo "  lint             Lint code with flake8"
+	@echo "  fix              Auto-fix lint issues (imports, format)"
 	@echo "  clean            Clean cache and temp files"
 	@echo ""
 	@echo "Testing:"
@@ -37,7 +38,12 @@ format:
 	uv run black .
 
 lint:
-	uv run flake8 . --exclude=.venv
+	uv run flake8 .
+
+fix:
+	uv run autoflake --remove-all-unused-imports --remove-unused-variables --in-place --recursive .
+	uv run isort .
+	uv run black .
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
@@ -72,12 +78,12 @@ docker-deploy:
 	./deploy.sh
 
 # Quality checks (run before committing)
-check: format lint test-unit
+check: fix lint test-unit
 	@echo "✅ All quality checks passed!"
 
 # Quick development cycle
 dev: install format test-unit run
 
 # Full CI pipeline
-ci: install format lint test
+ci: install fix lint test
 	@echo "✅ CI pipeline completed successfully!"

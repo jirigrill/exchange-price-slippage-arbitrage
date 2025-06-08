@@ -29,6 +29,8 @@ dev-dependencies = [
     "aioresponses>=0.7.4",
     "black>=23.0.0",
     "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "autoflake>=2.0.0",
 ]
 
 [tool.pytest.ini_options]
@@ -46,3 +48,12 @@ markers = [
     "integration: Integration tests", 
     "slow: Slow tests that hit external APIs",
 ]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true

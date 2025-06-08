@@ -373,12 +373,19 @@ uv run python tests/test_runner.py
 ```bash
 # Using Makefile (recommended)
 make format                 # Format code with black
-make lint                   # Lint code with flake8 (excludes .venv)
+make fix                    # Auto-fix imports, sort, and format
+make lint                   # Lint code with flake8 (100 char limit)
 make clean                  # Clean cache and temp files
+
+# Quick workflows
+make check                  # Auto-fix + lint + unit tests
+make ci                     # Full CI pipeline
 
 # Or directly
 uv run black .
-uv run flake8 . --exclude=.venv
+uv run autoflake --remove-all-unused-imports --remove-unused-variables --in-place --recursive .
+uv run isort .
+uv run flake8 .
 ```
 
 ## Dependencies

@@ -7,14 +7,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Using Makefile (Recommended)
 - **Show all available commands**: `make help`
 - **Quick development setup**: `make dev` (install + format + test + run)
-- **Pre-commit checks**: `make check` (format + lint + unit tests)
-- **Full CI pipeline**: `make ci` (install + format + lint + all tests)
+- **Auto-fix code issues**: `make fix` (remove unused imports + sort imports + format)
+- **Pre-commit checks**: `make check` (fix + lint + unit tests)
+- **Full CI pipeline**: `make ci` (install + fix + lint + all tests)
 
 ### Development
 - **Install dependencies**: `make install` or `uv sync`
 - **Run the application**: `make run` or `uv run python main.py`
 - **Format code**: `make format` or `uv run black .`
-- **Lint code**: `make lint` or `uv run flake8 . --exclude=.venv`
+- **Auto-fix code issues**: `make fix` or run autoflake + isort + black
+- **Lint code**: `make lint` or `uv run flake8 .`
 - **Clean cache files**: `make clean`
 
 ### Testing
