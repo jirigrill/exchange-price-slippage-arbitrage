@@ -75,21 +75,23 @@ uv run python main.py
 
 **Sample Output:**
 ```
-Starting Bitcoin Latency Arbitrage POC...
-Monitoring exchanges: ['kraken', 'coinmate']
-Trading symbol: BTC/USDT
-Minimum profit threshold: 0.1%
---------------------------------------------------
-✓ Initialized kraken
-✓ Initialized coinmate
-✓ Updated exchange rates (CZK/USD: 0.0417)
-✓ Kraken API: BTC/USD = 105589.40 USD ($105,589.40 USD)
-✓ Coinmate API: BTC/CZK = 2295278.00 CZK ($105,724.46 USD)
+[2025-06-08 06:23:15] Starting Bitcoin Latency Arbitrage POC...
+[2025-06-08 06:23:15] Monitoring exchanges: ['kraken', 'coinmate']
+[2025-06-08 06:23:15] Trading symbol: BTC/USDT
+[2025-06-08 06:23:15] Minimum profit threshold: 0.1%
+[2025-06-08 06:23:15] --------------------------------------------------
+[2025-06-08 06:23:15] ✓ Initialized kraken
+[2025-06-08 06:23:15] ✓ Initialized coinmate
+[2025-06-08 06:23:16] ✓ Telegram notifications enabled
+[2025-06-08 06:23:16] ✓ Telegram connection test successful
+[2025-06-08 06:23:17] ✓ Updated exchange rates (CZK/USD: 0.0417)
+[2025-06-08 06:23:18] ✓ Kraken API: BTC/USD = 105589.40 USD ($105,589.40 USD)
+[2025-06-08 06:23:18] ✓ Coinmate API: BTC/CZK = 2295278.00 CZK ($105,724.46 USD)
 
-Active exchanges (2/2): kraken, coinmate
-Current spread: $135.06 (0.13%)
-Lowest: kraken - $105,589.40 USD
-Highest: coinmate - $105,724.46 USD
+[2025-06-08 06:23:18] Active exchanges (2/2): kraken, coinmate
+[2025-06-08 06:23:18] Current spread: $135.06 (0.13%)
+[2025-06-08 06:23:18] Lowest: kraken - $105,589.40 USD
+[2025-06-08 06:23:18] Highest: coinmate - $105,724.46 USD
 ```
 
 ### Configuration
@@ -196,15 +198,17 @@ uv run python main.py
 ### Current Structure
 
 ```
+exchange-price-slippage-arbitrage/
 ├── src/
-│   ├── core/                   # Core business logic
-│   │   ├── __init__.py
-│   │   ├── arbitrage_detector.py  # Arbitrage opportunity detection
-│   │   └── exchange_monitor.py    # Real-time price monitoring
+│   ├── __init__.py
 │   ├── apis/                   # External API integrations
 │   │   ├── __init__.py
 │   │   ├── coinmate_api.py        # Dedicated Coinmate API client
 │   │   └── kraken_api.py          # Dedicated Kraken API client
+│   ├── core/                   # Core business logic
+│   │   ├── __init__.py
+│   │   ├── arbitrage_detector.py  # Arbitrage opportunity detection
+│   │   └── exchange_monitor.py    # Real-time price monitoring
 │   ├── services/               # Business services
 │   │   ├── __init__.py
 │   │   ├── currency_converter.py  # USD/CZK conversion
@@ -227,15 +231,17 @@ uv run python main.py
 │   │   └── test_telegram_service.py
 │   └── integration/           # Integration tests
 │       └── test_telegram.py   # Real Telegram API tests
-├── monitoring/                 # Monitoring and logging
-│   └── logrotate.conf         # Log rotation configuration
 ├── docs/                       # Documentation
 │   └── DEPLOYMENT.md          # Deployment guide
+├── monitoring/                 # Monitoring and logging
+│   └── logrotate.conf         # Log rotation configuration
+├── logs/                       # Application logs (created at runtime)
 ├── Dockerfile                  # Docker container definition
 ├── docker-compose.yml          # Docker Compose configuration
 ├── deploy.sh                   # Simple deployment script
 ├── main.py                     # Main application entry point
 ├── pyproject.toml              # UV project configuration
+├── uv.lock                     # UV lock file
 └── README.md                   # This file
 ```
 
@@ -303,23 +309,24 @@ The project includes a comprehensive test suite with 68 tests:
 # Run all tests
 uv run pytest
 
-# Run only unit tests (fast)
-uv run python tests/test_runner.py unit
-
-# Run only integration tests (requires .env credentials)
-uv run python tests/test_runner.py integration
+# Use the test runner for organized testing
+uv run python tests/test_runner.py unit          # Run only unit tests (62 tests)
+uv run python tests/test_runner.py integration   # Run integration tests (6 tests)
+uv run python tests/test_runner.py all           # Run all tests
+uv run python tests/test_runner.py coverage      # Run with coverage report
 
 # Run with verbose output
 uv run python tests/test_runner.py unit -v
 
-# Run specific test file
+# Run specific test files
 uv run pytest tests/unit/test_coinmate_api.py
+uv run pytest tests/unit/test_telegram_service.py
 
-# Run with coverage
-uv run python tests/test_runner.py coverage
-
-# Test Telegram integration manually
+# Test Telegram integration manually (requires .env credentials)
 uv run python tests/integration/test_telegram.py
+
+# Show test runner help
+uv run python tests/test_runner.py
 ```
 
 ### Test Categories
