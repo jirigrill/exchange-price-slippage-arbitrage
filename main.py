@@ -6,7 +6,6 @@ from config.settings import (
     API_KEYS,
     EXCHANGE_TRADING_PAIRS,
     MIN_PROFIT_PERCENTAGE,
-    TELEGRAM_ALERT_THRESHOLD,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
     TRADING_SYMBOL,
@@ -22,7 +21,7 @@ async def main():
     log_with_timestamp(f"📊 Monitoring exchanges: {ALL_EXCHANGES}")
     log_with_timestamp(f"💰 Trading symbol: {TRADING_SYMBOL}")
     log_with_timestamp(f"📈 Minimum profit threshold: {MIN_PROFIT_PERCENTAGE}%")
-    log_with_timestamp(f"📱 Telegram alert threshold: {TELEGRAM_ALERT_THRESHOLD}%")
+    log_with_timestamp(f"📱 Telegram alerts: enabled for all opportunities >= {MIN_PROFIT_PERCENTAGE}%")
     print("-" * 50)
 
     # Force flush output
@@ -56,10 +55,9 @@ async def main():
                         f"🚨 Found {len(opportunities)} arbitrage opportunities:"
                     )
 
-                    # Send Telegram alerts for high-profit opportunities
+                    # Send Telegram alerts for all detected opportunities
                     for opp in opportunities:
-                        if opp.profit_percentage >= TELEGRAM_ALERT_THRESHOLD:
-                            await telegram.send_arbitrage_alert(opp)
+                        await telegram.send_arbitrage_alert(opp)
 
                     # Log opportunities to console
                     for i, opp in enumerate(opportunities[:3], 1):
@@ -75,8 +73,7 @@ async def main():
                         log_with_timestamp(
                             f"   Volume limit: {opp.volume_limit:.4f} BTC"
                         )
-                        if opp.profit_percentage >= TELEGRAM_ALERT_THRESHOLD:
-                            log_with_timestamp("   📱 Telegram alert sent!")
+                        log_with_timestamp("   📱 Telegram alert sent!")
                         print()
 
                 spread_data = monitor.get_price_spread()

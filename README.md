@@ -60,7 +60,7 @@ This project uses [uv](https://github.com/astral-sh/uv) for dependency managemen
 3. **Configure environment variables (optional)**
    ```bash
    cp .env.example .env
-   # Edit .env with your API keys if needed
+   # Edit .env with your settings - see .env.example for all options
    ```
 
    **Note**: The system works without API keys for basic price monitoring. API keys are only needed for:
@@ -123,10 +123,8 @@ Edit `config/settings.py` or set environment variables in `.env`:
 
 ```python
 # Minimum profit threshold (percentage)
+# Telegram alerts will be sent for all opportunities above this threshold
 MIN_PROFIT_PERCENTAGE = 0.1
-
-# Telegram alert threshold (percentage)
-TELEGRAM_ALERT_THRESHOLD = 0.5
 ```
 
 ### Environment Variables
@@ -148,7 +146,7 @@ MIN_PROFIT_PERCENTAGE=0.1
 # Get from @BotFather
 TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 TELEGRAM_CHAT_ID=123456789
-TELEGRAM_ALERT_THRESHOLD=0.5  # Send alerts for profits >= 0.5%
+# Note: Telegram alerts use the same threshold as MIN_PROFIT_PERCENTAGE
 ```
 
 **Exchange API Keys (Optional):**
@@ -190,7 +188,7 @@ Add to your `.env` file:
 ```bash
 TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 TELEGRAM_CHAT_ID=123456789
-TELEGRAM_ALERT_THRESHOLD=0.5  # Send alerts for profits >= 0.5%
+# Telegram alerts are sent for all detected opportunities
 ```
 
 ### 4. Test Your Setup

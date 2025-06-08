@@ -22,8 +22,8 @@ MIN_PROFIT_PERCENTAGE = float(os.getenv("MIN_PROFIT_PERCENTAGE", "0.1"))
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# Alert threshold for Telegram notifications (percentage)
-TELEGRAM_ALERT_THRESHOLD = float(os.getenv("TELEGRAM_ALERT_THRESHOLD", "0.5"))
+# Telegram notifications will use the same threshold as MIN_PROFIT_PERCENTAGE
+# No separate threshold needed - alert on every detected opportunity
 
 
 API_KEYS = {

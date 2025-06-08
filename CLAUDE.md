@@ -55,7 +55,7 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 **Configuration** (`config/settings.py`):
 - Exchange definitions: `LARGE_EXCHANGES` (Kraken), `SMALL_EXCHANGES` (Coinmate)
 - Trading pairs: `EXCHANGE_TRADING_PAIRS` maps exchanges to their specific pairs
-- Profit thresholds: `MIN_PROFIT_PERCENTAGE`, `TELEGRAM_ALERT_THRESHOLD`
+- Profit thresholds: `MIN_PROFIT_PERCENTAGE` (used for both detection and Telegram alerts)
 
 ### Data Flow
 
@@ -77,7 +77,7 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 The system requires minimal configuration and works without API keys for basic monitoring:
 - `.env` file contains optional API keys and Telegram credentials
 - All settings have sensible defaults in `config/settings.py`
-- Telegram notifications require `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`
+- Telegram notifications require `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (alerts sent for all detected opportunities)
 
 ### Testing Strategy
 
