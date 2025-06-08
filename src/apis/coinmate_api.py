@@ -1,11 +1,9 @@
 import hashlib
 import hmac
 import time
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import aiohttp
-
-from config.settings import COINMATE_TRADING_FEE
 
 from ..utils.logging import log_with_timestamp
 
@@ -14,10 +12,10 @@ class CoinmateAPI:
     """
     Coinmate API client for Czech cryptocurrency exchange
     Based on https://coinmate.docs.apiary.io/
-    
+
     Args:
         api_key: Public key (publicKey in Coinmate terms)
-        api_secret: Private key (privateKey in Coinmate terms)  
+        api_secret: Private key (privateKey in Coinmate terms)
         client_id: Client ID from account settings
     """
 
@@ -52,13 +50,13 @@ class CoinmateAPI:
         # Generate signature using private key (note: privateKey used directly, not UTF-8 encoded)
         dig = hmac.new(
             self.api_secret.encode("utf-8"),  # Private key as bytes
-            msg=message.encode("utf-8"),      # Message as bytes
-            digestmod=hashlib.sha256
+            msg=message.encode("utf-8"),  # Message as bytes
+            digestmod=hashlib.sha256,
         ).hexdigest()
-        
+
         # Convert to bytes then uppercase (matching working implementation)
         signature = dig.encode("utf-8").upper().decode("utf-8")
-        
+
         return signature
 
     async def _make_request(
@@ -78,14 +76,16 @@ class CoinmateAPI:
             # Use centiseconds for nonce (time.time() * 100) as in working implementation
             nonce = str(int(time.time() * 100))
             signature = self._generate_signature(nonce)
-            
+
             data = data or {}
-            data.update({
-                "clientId": self.client_id, 
-                "publicKey": self.api_key, 
-                "nonce": nonce,
-                "signature": signature
-            })
+            data.update(
+                {
+                    "clientId": self.client_id,
+                    "publicKey": self.api_key,
+                    "nonce": nonce,
+                    "signature": signature,
+                }
+            )
 
         try:
             if method == "GET":
@@ -95,7 +95,9 @@ class CoinmateAPI:
             elif method == "POST":
                 # Use proper headers for form data as in working implementation
                 headers = {"Content-Type": "application/x-www-form-urlencoded"}
-                async with self.session.post(url, data=data, headers=headers) as response:
+                async with self.session.post(
+                    url, data=data, headers=headers
+                ) as response:
                     if response.status == 200:
                         return await response.json()
 
@@ -143,25 +145,29 @@ class CoinmateAPI:
     async def get_trading_fees(self, currency_pair: str = "BTC_CZK") -> Optional[float]:
         """
         Get trading fees for a specific currency pair
-        
-        Note: The tradingFees endpoint from the Coinmate documentation appears to be 
+
+        Note: The tradingFees endpoint from the Coinmate documentation appears to be
         unavailable (returns 404). This function attempts to fetch fees but will
         return None if the endpoint is not available, allowing fallback to configured fees.
-        
+
         Based on: https://coinmate.docs.apiary.io/#reference/trader-fees/get-trading-fees
         """
         if not all([self.api_key, self.api_secret, self.client_id]):
-            log_with_timestamp("⚠ Coinmate API credentials missing, cannot fetch trading fees")
+            log_with_timestamp(
+                "⚠ Coinmate API credentials missing, cannot fetch trading fees"
+            )
             return None
-            
+
         try:
             endpoint = "tradingFees"
             # This endpoint requires authentication but may not be available
-            fees_data = await self._make_request(endpoint, "POST", {}, auth_required=True)
-            
+            fees_data = await self._make_request(
+                endpoint, "POST", {}, auth_required=True
+            )
+
             if fees_data and not fees_data.get("error", True):
                 data = fees_data.get("data", {})
-                
+
                 # Look for maker fee for the specific currency pair
                 # Expected format: {"BTC_CZK": {"maker": 0.35, "taker": 0.5}}
                 pair_fees = data.get(currency_pair)
@@ -169,20 +175,28 @@ class CoinmateAPI:
                     maker_fee = pair_fees["maker"]
                     return float(maker_fee)
                 else:
-                    log_with_timestamp(f"⚠ No trading fees found for {currency_pair} in Coinmate API")
+                    log_with_timestamp(
+                        f"⚠ No trading fees found for {currency_pair} in Coinmate API"
+                    )
                     return None
             else:
                 # Don't log 404 errors as they're expected for this endpoint
                 if fees_data is None:
-                    log_with_timestamp(f"⚠ Coinmate tradingFees endpoint not available (404)")
+                    log_with_timestamp(
+                        "⚠ Coinmate tradingFees endpoint not available (404)"
+                    )
                 else:
                     error_msg = fees_data.get("errorMessage", "Unknown error")
                     if "Access denied" in str(error_msg):
-                        log_with_timestamp(f"⚠ Coinmate API access denied - check credentials and permissions")
+                        log_with_timestamp(
+                            "⚠ Coinmate API access denied - check credentials and permissions"
+                        )
                     else:
-                        log_with_timestamp(f"✗ Coinmate trading fees API error: {error_msg}")
+                        log_with_timestamp(
+                            f"✗ Coinmate trading fees API error: {error_msg}"
+                        )
                 return None
-                
+
         except Exception as e:
             log_with_timestamp(f"✗ Coinmate fee fetch error: {e}")
         return None
