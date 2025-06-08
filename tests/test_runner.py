@@ -15,7 +15,7 @@ def run_tests(args=None):
         cmd.extend(args)
 
     try:
-        result = subprocess.run(cmd, cwd=Path(__file__).parent)
+        result = subprocess.run(cmd, cwd=Path(__file__).parent.parent)
         return result.returncode
     except KeyboardInterrupt:
         print("\nTests interrupted by user")

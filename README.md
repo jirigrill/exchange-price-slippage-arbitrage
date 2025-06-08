@@ -28,7 +28,7 @@ The system automatically converts all prices to USD for accurate comparison and 
 - ✅ **Fee Accounting**: Trading fees included in profit calculations
 - ✅ **Telegram Notifications**: Instant alerts for profitable opportunities
 - ✅ **Async Architecture**: Efficient concurrent price monitoring
-- ✅ **Comprehensive Testing**: Full pytest suite with 53 tests
+- ✅ **Comprehensive Testing**: Full pytest suite with 68 tests
 - ✅ **Environment Configuration**: Flexible setup via environment variables
 
 ## Installation
@@ -170,7 +170,13 @@ TELEGRAM_ALERT_THRESHOLD=0.5  # Send alerts for profits >= 0.5%
 
 ### 4. Test Your Setup
 
-The application will automatically test the Telegram connection on startup and send you a test message.
+```bash
+# Test Telegram integration manually
+uv run python tests/integration/test_telegram.py
+
+# Or let the application test automatically on startup
+uv run python main.py
+```
 
 ### Sample Alert Message
 
@@ -210,13 +216,17 @@ The application will automatically test the Telegram connection on startup and s
 │   ├── __init__.py
 │   └── settings.py             # Configuration settings
 ├── tests/                      # Comprehensive test suite
-│   ├── unit/                   # Unit tests
-│   │   ├── conftest.py        # Shared test fixtures
+│   ├── __init__.py
+│   ├── conftest.py            # Shared test fixtures
+│   ├── test_runner.py         # Test runner script
+│   ├── unit/                  # Unit tests (62 tests)
 │   │   ├── test_arbitrage_detector.py
 │   │   ├── test_coinmate_api.py
+│   │   ├── test_currency_converter.py
 │   │   ├── test_kraken_api.py
-│   │   └── test_currency_converter.py
-│   └── integration/            # Integration tests
+│   │   └── test_telegram_service.py
+│   └── integration/           # Integration tests
+│       └── test_telegram.py   # Real Telegram API tests
 ├── monitoring/                 # Monitoring and logging
 │   └── logrotate.conf         # Log rotation configuration
 ├── docs/                       # Documentation
@@ -225,7 +235,6 @@ The application will automatically test the Telegram connection on startup and s
 ├── docker-compose.yml          # Docker Compose configuration
 ├── deploy.sh                   # Simple deployment script
 ├── main.py                     # Main application entry point
-├── test_runner.py              # Test runner script
 ├── pyproject.toml              # UV project configuration
 └── README.md                   # This file
 ```
@@ -288,23 +297,29 @@ See [**DEPLOYMENT.md**](docs/DEPLOYMENT.md) for detailed setup guide.
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 53 tests:
+The project includes a comprehensive test suite with 68 tests:
 
 ```bash
 # Run all tests
 uv run pytest
 
 # Run only unit tests (fast)
-python test_runner.py unit
+uv run python tests/test_runner.py unit
+
+# Run only integration tests (requires .env credentials)
+uv run python tests/test_runner.py integration
 
 # Run with verbose output
-python test_runner.py unit -v
+uv run python tests/test_runner.py unit -v
 
 # Run specific test file
-uv run pytest tests/test_coinmate_api.py
+uv run pytest tests/unit/test_coinmate_api.py
 
 # Run with coverage
-python test_runner.py coverage
+uv run python tests/test_runner.py coverage
+
+# Test Telegram integration manually
+uv run python tests/integration/test_telegram.py
 ```
 
 ### Test Categories
@@ -338,7 +353,7 @@ uv run flake8 .
 - **Multi-currency support**: USD, CZK conversion
 - **Native APIs**: Direct Kraken and Coinmate API clients (no third-party dependencies)
 - **Real-time data**: Live exchange rates and price monitoring
-- **Comprehensive testing**: 53 tests covering all components
+- **Comprehensive testing**: 68 tests covering all components
 
 ## Contributing
 
