@@ -178,7 +178,7 @@ class ArbitrageDetector:
                 self._fee_cache[cache_key] = dynamic_fee
                 self._fee_cache_timestamp[cache_key] = time.time()
                 log_with_timestamp(
-                    f"📊 Dynamic fee: {exchange} = {dynamic_fee:.2f}% (cached for 1h)"
+                    f"📊 Dynamic fee: {exchange} = {dynamic_fee:.2f}% (fetched from API, cached for 1h)"
                 )
                 return dynamic_fee
 
@@ -187,16 +187,30 @@ class ArbitrageDetector:
             "kraken": KRAKEN_TRADING_FEE,
             "coinmate": COINMATE_TRADING_FEE,
         }
-        return static_fees.get(exchange, DEFAULT_TRADING_FEE)
+        fallback_fee = static_fees.get(exchange, DEFAULT_TRADING_FEE)
+        log_with_timestamp(f"📊 Static fee: {exchange} = {fallback_fee:.2f}% (using configured value)")
+        return fallback_fee
 
     async def _fetch_dynamic_fee(self, exchange: str) -> Optional[float]:
         """Fetch current trading fee from exchange API"""
         try:
             if exchange == "kraken":
-                async with KrakenAPI() as api:
+                # Get Kraken credentials from monitor
+                kraken_creds = self.monitor.api_keys.get("kraken", {})
+                api_key = kraken_creds.get("apiKey")
+                api_secret = kraken_creds.get("secret")
+                
+                async with KrakenAPI(api_key, api_secret) as api:
                     return await api.get_trading_fees("BTCUSD")
+                    
             elif exchange == "coinmate":
-                async with CoinmateAPI() as api:
+                # Get Coinmate credentials from monitor
+                coinmate_creds = self.monitor.api_keys.get("coinmate", {})
+                api_key = coinmate_creds.get("apiKey")
+                api_secret = coinmate_creds.get("secret")
+                client_id = coinmate_creds.get("clientId")
+                
+                async with CoinmateAPI(api_key, api_secret, client_id) as api:
                     return await api.get_trading_fees("BTC_CZK")
         except Exception as e:
             log_with_timestamp(f"⚠ Failed to fetch {exchange} fees: {e}")

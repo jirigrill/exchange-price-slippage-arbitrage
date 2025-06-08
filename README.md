@@ -146,6 +146,7 @@ COINMATE_TRADING_FEE=0.35
 DEFAULT_TRADING_FEE=0.25
 
 # Enable dynamic fee fetching from exchange APIs
+# Note: Coinmate fee fetching requires API credentials
 DYNAMIC_FEES_ENABLED=false
 ```
 

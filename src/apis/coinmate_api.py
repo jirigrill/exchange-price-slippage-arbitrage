@@ -14,6 +14,11 @@ class CoinmateAPI:
     """
     Coinmate API client for Czech cryptocurrency exchange
     Based on https://coinmate.docs.apiary.io/
+    
+    Args:
+        api_key: Public key (publicKey in Coinmate terms)
+        api_secret: Private key (privateKey in Coinmate terms)  
+        client_id: Client ID from account settings
     """
 
     def __init__(
@@ -36,27 +41,24 @@ class CoinmateAPI:
         if self.session:
             await self.session.close()
 
-    def _generate_signature(self, nonce: str, data: Dict[str, Any]) -> str:
-        """Generate HMAC-SHA256 signature for authenticated requests"""
+    def _generate_signature(self, nonce: str) -> str:
+        """Generate HMAC-SHA256 signature for authenticated requests based on working code"""
         if not self.api_secret:
-            raise ValueError("API secret required for authenticated requests")
+            raise ValueError("Private key required for authenticated requests")
 
-        # Create message string
+        # Create message string: nonce + clientId + publicKey
         message = f"{nonce}{self.client_id}{self.api_key}"
 
-        # Add sorted data parameters
-        for key in sorted(data.keys()):
-            message += f"{key}={data[key]}"
-
-        # Generate signature
-        signature = (
-            hmac.new(
-                self.api_secret.encode("utf-8"), message.encode("utf-8"), hashlib.sha256
-            )
-            .hexdigest()
-            .upper()
-        )
-
+        # Generate signature using private key (note: privateKey used directly, not UTF-8 encoded)
+        dig = hmac.new(
+            self.api_secret.encode("utf-8"),  # Private key as bytes
+            msg=message.encode("utf-8"),      # Message as bytes
+            digestmod=hashlib.sha256
+        ).hexdigest()
+        
+        # Convert to bytes then uppercase (matching working implementation)
+        signature = dig.encode("utf-8").upper().decode("utf-8")
+        
         return signature
 
     async def _make_request(
@@ -73,12 +75,17 @@ class CoinmateAPI:
             if not all([self.api_key, self.api_secret, self.client_id]):
                 raise ValueError("API credentials required for authenticated requests")
 
-            nonce = str(int(time.time() * 1000))
+            # Use centiseconds for nonce (time.time() * 100) as in working implementation
+            nonce = str(int(time.time() * 100))
+            signature = self._generate_signature(nonce)
+            
             data = data or {}
-            data.update(
-                {"clientId": self.client_id, "publicKey": self.api_key, "nonce": nonce}
-            )
-            data["signature"] = self._generate_signature(nonce, data)
+            data.update({
+                "clientId": self.client_id, 
+                "publicKey": self.api_key, 
+                "nonce": nonce,
+                "signature": signature
+            })
 
         try:
             if method == "GET":
@@ -86,7 +93,9 @@ class CoinmateAPI:
                     if response.status == 200:
                         return await response.json()
             elif method == "POST":
-                async with self.session.post(url, data=data) as response:
+                # Use proper headers for form data as in working implementation
+                headers = {"Content-Type": "application/x-www-form-urlencoded"}
+                async with self.session.post(url, data=data, headers=headers) as response:
                     if response.status == 200:
                         return await response.json()
 
@@ -134,30 +143,46 @@ class CoinmateAPI:
     async def get_trading_fees(self, currency_pair: str = "BTC_CZK") -> Optional[float]:
         """
         Get trading fees for a specific currency pair
-        Public endpoint - returns maker fee percentage
+        
+        Note: The tradingFees endpoint from the Coinmate documentation appears to be 
+        unavailable (returns 404). This function attempts to fetch fees but will
+        return None if the endpoint is not available, allowing fallback to configured fees.
+        
+        Based on: https://coinmate.docs.apiary.io/#reference/trader-fees/get-trading-fees
         """
+        if not all([self.api_key, self.api_secret, self.client_id]):
+            log_with_timestamp("⚠ Coinmate API credentials missing, cannot fetch trading fees")
+            return None
+            
         try:
-            trading_pairs = await self.get_trading_pairs()
-            if trading_pairs and not trading_pairs.get("error", True):
-                data = trading_pairs.get("data", [])
-                for pair in data:
-                    if pair.get("name") == currency_pair:
-                        # Return maker fee as percentage
-                        maker_fee = pair.get("makerFee")
-                        if maker_fee is not None:
-                            return float(maker_fee)
-                        else:
-                            # If makerFee field not found, use configured fallback
-                            log_with_timestamp(
-                                f"⚠ No makerFee data found for {currency_pair}, using configured fee: {COINMATE_TRADING_FEE}%"  # noqa: E501
-                            )
-                            return COINMATE_TRADING_FEE
-
-                # If currency pair not found in data
-                log_with_timestamp(
-                    f"⚠ Currency pair {currency_pair} not found, using configured fee: {COINMATE_TRADING_FEE}%"  # noqa: E501
-                )
-                return COINMATE_TRADING_FEE
+            endpoint = "tradingFees"
+            # This endpoint requires authentication but may not be available
+            fees_data = await self._make_request(endpoint, "POST", {}, auth_required=True)
+            
+            if fees_data and not fees_data.get("error", True):
+                data = fees_data.get("data", {})
+                
+                # Look for maker fee for the specific currency pair
+                # Expected format: {"BTC_CZK": {"maker": 0.35, "taker": 0.5}}
+                pair_fees = data.get(currency_pair)
+                if pair_fees and "maker" in pair_fees:
+                    maker_fee = pair_fees["maker"]
+                    return float(maker_fee)
+                else:
+                    log_with_timestamp(f"⚠ No trading fees found for {currency_pair} in Coinmate API")
+                    return None
+            else:
+                # Don't log 404 errors as they're expected for this endpoint
+                if fees_data is None:
+                    log_with_timestamp(f"⚠ Coinmate tradingFees endpoint not available (404)")
+                else:
+                    error_msg = fees_data.get("errorMessage", "Unknown error")
+                    if "Access denied" in str(error_msg):
+                        log_with_timestamp(f"⚠ Coinmate API access denied - check credentials and permissions")
+                    else:
+                        log_with_timestamp(f"✗ Coinmate trading fees API error: {error_msg}")
+                return None
+                
         except Exception as e:
             log_with_timestamp(f"✗ Coinmate fee fetch error: {e}")
         return None
