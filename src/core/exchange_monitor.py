@@ -2,8 +2,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from ..apis.coinmate_api import CoinmateAPI
-from ..apis.kraken_api import KrakenAPI
+from ..apis.base_exchange import BaseExchangeAPI, create_exchange_api
 from ..services.currency_converter import CurrencyConverter
 from ..utils.logging import log_with_timestamp
 
@@ -42,41 +41,100 @@ class ExchangeMonitor:
                 log_with_timestamp(f"✗ Error initializing {exchange_name}: {e}")
 
     async def fetch_price(self, exchange_name: str) -> Optional[PriceData]:
+        """Fetch price using the abstract exchange API interface"""
         # Get the trading pair for this exchange
         trading_pair = self.trading_pairs.get(exchange_name, self.symbol)
 
-        # Use dedicated APIs for each exchange
-        if exchange_name == "coinmate":
-            price_data = await self._fetch_price_coinmate_api(trading_pair)
-        elif exchange_name == "kraken":
-            price_data = await self._fetch_price_kraken_api(trading_pair)
-        else:
-            log_with_timestamp(f"✗ Exchange {exchange_name} not supported")
-            return None
-
-        if price_data:
-            self.latest_prices[exchange_name] = price_data
-            self.price_history.append(price_data)
-
-        return price_data
-
-    async def _fetch_price_coinmate_api(self, trading_pair: str) -> Optional[PriceData]:
-        """Fetch price using Coinmate API directly"""
         try:
             # Get API credentials if available
-            coinmate_creds = self.api_keys.get("coinmate", {})
-            api_key = coinmate_creds.get("apiKey")
-            api_secret = coinmate_creds.get("secret")
-            client_id = coinmate_creds.get("clientId")
+            exchange_creds = self.api_keys.get(exchange_name, {})
 
-            async with CoinmateAPI(api_key, api_secret, client_id) as api:
-                # Convert trading pair format (BTC/CZK -> BTC_CZK)
-                coinmate_pair = trading_pair.replace("/", "_")
-                ticker_data = await api.get_ticker(coinmate_pair)
+            # Create exchange API using factory
+            exchange_api = create_exchange_api(
+                exchange_name,
+                api_key=exchange_creds.get("apiKey"),
+                api_secret=exchange_creds.get("secret"),
+                client_id=exchange_creds.get("clientId"),  # Only used by Coinmate
+            )
 
-                if ticker_data and not ticker_data.get("error", True):
-                    data = ticker_data.get("data", {})
-                    price = float(data.get("last", 0))
+            price_data = await self._fetch_price_generic(exchange_api, trading_pair)
+
+            if price_data:
+                self.latest_prices[exchange_name] = price_data
+                self.price_history.append(price_data)
+
+            return price_data
+
+        except ValueError as e:
+            log_with_timestamp(f"✗ {e}")
+            return None
+        except Exception as e:
+            log_with_timestamp(f"✗ Error fetching price from {exchange_name}: {e}")
+            return None
+
+    async def _fetch_price_generic(
+        self, exchange_api: BaseExchangeAPI, trading_pair: str
+    ) -> Optional[PriceData]:
+        """Generic method to fetch price using any exchange API"""
+        try:
+            async with exchange_api as api:
+                # Normalize trading pair for this exchange
+                normalized_pair = api.normalize_pair(trading_pair)
+                ticker_data = await api.get_ticker(normalized_pair)
+
+                if ticker_data:
+                    # Extract price data based on exchange type
+                    exchange_name = api.get_exchange_name()
+
+                    if exchange_name == "coinmate":
+                        if not ticker_data.get("error", True):
+                            data = ticker_data.get("data", {})
+                            price = float(data.get("last", 0))
+                            volume = float(data.get("amount", 0))
+                        else:
+                            error_msg = ticker_data.get("errorMessage", "Unknown error")
+                            log_with_timestamp(
+                                f"✗ {exchange_name.title()} API error: {error_msg}"
+                            )
+                            return None
+
+                    elif exchange_name == "kraken":
+                        if not ticker_data.get("error"):
+                            result = ticker_data.get("result", {})
+                            # Kraken uses different pair formats
+                            pair_data = (
+                                result.get(normalized_pair)
+                                or result.get("XXBTZUSD")
+                                or result.get("XBTUSD")
+                                or result.get("BTCUSD")
+                            )
+
+                            if pair_data:
+                                last_trade = pair_data.get("c", [None, None])
+                                price = float(last_trade[0]) if last_trade[0] else None
+                                volume = float(last_trade[1]) if last_trade[1] else 0.0
+
+                                if not price:
+                                    log_with_timestamp(
+                                        f"✗ No price data in {exchange_name} response"
+                                    )
+                                    return None
+                            else:
+                                log_with_timestamp(
+                                    f"✗ No pair data found for {normalized_pair} in {exchange_name}"
+                                )
+                                return None
+                        else:
+                            error_msg = ticker_data.get("error", "Unknown error")
+                            log_with_timestamp(
+                                f"✗ {exchange_name.title()} API error: {error_msg}"
+                            )
+                            return None
+                    else:
+                        log_with_timestamp(f"✗ Unsupported exchange: {exchange_name}")
+                        return None
+
+                    # Common processing for all exchanges
                     quote_currency = trading_pair.split("/")[1]
 
                     # Convert to USD if needed
@@ -85,109 +143,34 @@ class ExchangeMonitor:
                     )
                     if price_usd is None:
                         log_with_timestamp(
-                            f"⚠ Could not convert {quote_currency} to "
-                            f"USD for coinmate"
+                            f"⚠ Could not convert {quote_currency} to USD for {exchange_name}"
                         )
                         price_usd = price  # Fallback to original price
 
                     price_data = PriceData(
-                        exchange="coinmate",
+                        exchange=exchange_name,
                         symbol=trading_pair,
                         price=price,
                         price_usd=price_usd,
                         original_currency=quote_currency,
                         timestamp=time.time(),
-                        volume=float(data.get("amount", 0)),
+                        volume=volume,
                     )
 
                     log_with_timestamp(
-                        f"✓ Coinmate API: {trading_pair} = {price} "
+                        f"✓ {exchange_name.title()} API: {trading_pair} = {price} "
                         f"{quote_currency} (${price_usd:.2f} USD)"
                     )
                     return price_data
                 else:
-                    error_msg = (
-                        ticker_data.get("errorMessage", "Unknown error")
-                        if ticker_data
-                        else "No response"
+                    log_with_timestamp(
+                        f"✗ No response from {exchange_api.get_exchange_name()} API"
                     )
-                    log_with_timestamp(f"✗ Coinmate API error: {error_msg}")
 
         except Exception as e:
-            log_with_timestamp(f"✗ Coinmate API error: {e}")
-
-        return None
-
-    async def _fetch_price_kraken_api(self, trading_pair: str) -> Optional[PriceData]:
-        """Fetch price using Kraken API directly"""
-        try:
-            # Get API credentials if available
-            kraken_creds = self.api_keys.get("kraken", {})
-            api_key = kraken_creds.get("apiKey")
-            api_secret = kraken_creds.get("secret")
-
-            async with KrakenAPI(api_key, api_secret) as api:
-                # Convert trading pair format (BTC/USD -> BTCUSD)
-                kraken_pair = trading_pair.replace("/", "")
-                ticker_data = await api.get_ticker(kraken_pair)
-
-                if ticker_data and not ticker_data.get("error"):
-                    result = ticker_data.get("result", {})
-
-                    # Kraken uses different pair formats:
-                    # XXBTZUSD, XBTUSD, BTCUSD
-                    pair_data = (
-                        result.get(kraken_pair)
-                        or result.get("XXBTZUSD")
-                        or result.get("XBTUSD")
-                        or result.get("BTCUSD")
-                    )
-
-                    if pair_data:
-                        # 'c' contains [price, volume] for last trade
-                        last_trade = pair_data.get("c", [None, None])
-                        price = float(last_trade[0]) if last_trade[0] else None
-                        volume = float(last_trade[1]) if last_trade[1] else 0.0
-
-                        if price:
-                            quote_currency = trading_pair.split("/")[1]
-
-                            # Convert to USD if needed
-                            price_usd = await self.currency_converter.convert_to_usd(
-                                price, quote_currency
-                            )
-                            if price_usd is None:
-                                log_with_timestamp(
-                                    f"⚠ Could not convert {quote_currency} to "
-                                    f"USD for kraken"
-                                )
-                                price_usd = price  # Fallback to original price
-
-                            price_data = PriceData(
-                                exchange="kraken",
-                                symbol=trading_pair,
-                                price=price,
-                                price_usd=price_usd,
-                                original_currency=quote_currency,
-                                timestamp=time.time(),
-                                volume=volume,
-                            )
-
-                            log_with_timestamp(
-                                f"✓ Kraken API: {trading_pair} = {price} "
-                                f"{quote_currency} (${price_usd:.2f} USD)"
-                            )
-                            return price_data
-                else:
-                    error_msg = (
-                        ticker_data.get("error", "Unknown error")
-                        if ticker_data
-                        else "No response"
-                    )
-                    log_with_timestamp(f"✗ Kraken API error: {error_msg}")
-
-        except Exception as e:
-            log_with_timestamp(f"✗ Kraken API error: {e}")
+            log_with_timestamp(
+                f"✗ {exchange_api.get_exchange_name().title()} API error: {e}"
+            )
 
         return None
 

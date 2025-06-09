@@ -10,19 +10,18 @@ import aiohttp
 from config.settings import KRAKEN_TRADING_FEE
 
 from ..utils.logging import log_with_timestamp
+from .base_exchange import BaseExchangeAPI
 
 
-class KrakenAPI:
+class KrakenAPI(BaseExchangeAPI):
     """
     Kraken API client for cryptocurrency exchange
     Based on https://docs.kraken.com/api/
     """
 
     def __init__(self, api_key: Optional[str] = None, api_secret: Optional[str] = None):
+        super().__init__(api_key, api_secret)
         self.base_url = "https://api.kraken.com"
-        self.api_key = api_key
-        self.api_secret = api_secret
-        self.session = None
 
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10))
@@ -48,6 +47,14 @@ class KrakenAPI:
         signature = hmac.new(base64.b64decode(self.api_secret), message, hashlib.sha512)
 
         return base64.b64encode(signature.digest()).decode("utf-8")
+
+    def get_exchange_name(self) -> str:
+        """Get the name of this exchange"""
+        return "kraken"
+
+    def normalize_pair(self, pair: str) -> str:
+        """Convert BTC/USD to BTCUSD format for Kraken"""
+        return pair.replace("/", "")
 
     async def _make_request(
         self,

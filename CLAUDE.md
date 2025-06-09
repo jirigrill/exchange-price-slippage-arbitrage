@@ -41,8 +41,9 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 **Entry Point**: `main.py` - Orchestrates the monitoring loop, initializes all services, and handles the main application flow.
 
 **Exchange Integration** (`src/apis/`):
-- `kraken_api.py` - Handles BTC/USD price fetching from Kraken
-- `coinmate_api.py` - Handles BTC/CZK price fetching from Coinmate
+- `base_exchange.py` - Abstract base class defining the exchange API interface
+- `kraken_api.py` - Handles BTC/USD price fetching from Kraken (inherits from BaseExchangeAPI)
+- `coinmate_api.py` - Handles BTC/CZK price fetching from Coinmate (inherits from BaseExchangeAPI)
 
 **Business Logic** (`src/core/`):
 - `exchange_monitor.py` - Manages real-time price monitoring across exchanges, handles currency conversion
@@ -71,7 +72,9 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 
 - **Async/await**: All API calls are asynchronous for concurrent price fetching
 - **Multi-currency support**: Prices are normalized to USD for accurate comparison
-- **Modular exchange integration**: New exchanges can be added by implementing API clients in `src/apis/`
+- **Abstract base class pattern**: All exchange APIs inherit from BaseExchangeAPI for consistency and polymorphism
+- **Factory pattern**: Exchange APIs are created via factory function for flexible instantiation
+- **Modular exchange integration**: New exchanges can be added by inheriting from BaseExchangeAPI
 - **Profit-based filtering**: Only opportunities above configurable thresholds are reported
 
 ### Environment Configuration
@@ -88,4 +91,5 @@ The system requires minimal configuration and works without API keys for basic m
 - **Unit tests** (`tests/unit/`) - Mock external APIs, test individual components
 - **Integration tests** (`tests/integration/`) - Test real API interactions
 - **Test markers**: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.slow`
-- **68 total tests** covering all major components and error scenarios
+- **82 total tests** covering all major components and error scenarios
+- **Abstract base class testing**: Tests for BaseExchangeAPI interface and polymorphism

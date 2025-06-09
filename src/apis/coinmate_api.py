@@ -6,9 +6,10 @@ from typing import Dict, Optional
 import aiohttp
 
 from ..utils.logging import log_with_timestamp
+from .base_exchange import BaseExchangeAPI
 
 
-class CoinmateAPI:
+class CoinmateAPI(BaseExchangeAPI):
     """
     Coinmate API client for Czech cryptocurrency exchange
     Based on https://coinmate.docs.apiary.io/
@@ -25,11 +26,9 @@ class CoinmateAPI:
         api_secret: Optional[str] = None,
         client_id: Optional[str] = None,
     ):
+        super().__init__(api_key, api_secret, client_id=client_id)
         self.base_url = "https://coinmate.io/api"
-        self.api_key = api_key
-        self.api_secret = api_secret
         self.client_id = client_id
-        self.session = None
 
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10))
@@ -58,6 +57,14 @@ class CoinmateAPI:
         signature = dig.encode("utf-8").upper().decode("utf-8")
 
         return signature
+
+    def get_exchange_name(self) -> str:
+        """Get the name of this exchange"""
+        return "coinmate"
+
+    def normalize_pair(self, pair: str) -> str:
+        """Convert BTC/USD to BTC_USD format for Coinmate"""
+        return pair.replace("/", "_")
 
     async def _make_request(
         self,
