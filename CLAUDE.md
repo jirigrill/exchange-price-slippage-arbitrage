@@ -110,7 +110,7 @@ The system requires minimal configuration and works without API keys for basic m
 - When enabled (default), stores historical price data and arbitrage opportunities in TimescaleDB
 - `make run` automatically starts TimescaleDB container if database is enabled and container not running
 - Graceful fallback: if database connection fails, system continues without database storage
-- When enabled, requires TimescaleDB connection via `DATABASE_URL` (defaults to localhost:5432)
+- When enabled, requires TimescaleDB connection via configurable settings (defaults to localhost:5433)
 - **Timezone Support**: Set `TIMEZONE` environment variable (e.g., `Europe/Berlin`, `America/New_York`, `UTC`) for automatic timestamp conversion in database queries
 
 ### Testing Strategy
@@ -347,7 +347,7 @@ make db-timezone  # Sets database default to your TIMEZONE from .env
 docker exec -it $(docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage
 
 # Method 4: Using psql directly (if PostgreSQL client installed)
-psql postgresql://arbitrage_user:arbitrage_pass@localhost:5432/arbitrage
+psql postgresql://arbitrage_user:arbitrage_pass@localhost:5433/arbitrage
 ```
 
 ### Timezone Behavior

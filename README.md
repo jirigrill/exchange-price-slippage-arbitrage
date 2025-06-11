@@ -184,11 +184,19 @@ COINMATE_CLIENT_ID=your_coinmate_client_id
 # Enable/disable TimescaleDB for historical data storage
 # System works perfectly without database - just loses historical data
 DATABASE_ENABLED=true
-# PostgreSQL connection URL for TimescaleDB
-# Default connects to localhost TimescaleDB container started by 'make db-up'
-DATABASE_URL=postgresql://arbitrage_user:arbitrage_pass@localhost:5432/arbitrage
+# Database connection settings (configurable)
+DATABASE_HOST=localhost
+DATABASE_PORT=5433
+DATABASE_NAME=arbitrage
+DATABASE_USER=arbitrage_user
+DATABASE_PASSWORD=arbitrage_pass
+# PostgreSQL connection URL for TimescaleDB (auto-constructed from above)
+# Or override with custom URL: postgresql://user:pass@host:port/database
+DATABASE_URL=postgresql://arbitrage_user:arbitrage_pass@localhost:5433/arbitrage
 # Data retention period in days
 DB_RETENTION_DAYS=30
+# Timezone for displaying timestamps in database queries
+TIMEZONE=UTC
 ```
 
 **Note:** Basic price monitoring works without any configuration!
@@ -274,7 +282,10 @@ make run
 # Manually start database
 make db-up
 
-# Connect to database
+# Connect to database with timezone support (recommended)
+make db-connect
+
+# Or connect directly (shows UTC timestamps)
 docker exec -it $(docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage
 
 # View stored data

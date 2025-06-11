@@ -116,7 +116,8 @@ db-up:
 	docker-compose up -d timescaledb
 	@echo "⏳ Waiting for database to be ready..."
 	@sleep 10
-	@echo "✅ TimescaleDB is running on port 5432"
+	@DATABASE_PORT=$$(uv run python -c "from config.settings import DATABASE_PORT; print(DATABASE_PORT)") && \
+	echo "✅ TimescaleDB is running on port $$DATABASE_PORT"
 
 db-down:
 	docker-compose down timescaledb
@@ -138,12 +139,16 @@ db-test: db-up
 
 db-connect:
 	@TIMEZONE=$$(uv run python -c "from config.settings import TIMEZONE; print(TIMEZONE)") && \
+	DATABASE_USER=$$(uv run python -c "from config.settings import DATABASE_USER; print(DATABASE_USER)") && \
+	DATABASE_NAME=$$(uv run python -c "from config.settings import DATABASE_NAME; print(DATABASE_NAME)") && \
 	echo "🔗 Connecting to database with timezone: $$TIMEZONE" && \
-	docker exec -it $(shell docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage -c "SET timezone = '$$TIMEZONE';" -c "\echo 'Timezone set to $$TIMEZONE. Use exchange_prices_local view for local time display.'" && \
-	docker exec -it $(shell docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage
+	docker exec -it $(shell docker ps -q --filter "name=timescaledb") psql -U $$DATABASE_USER -d $$DATABASE_NAME -c "SET timezone = '$$TIMEZONE';" -c "\echo 'Timezone set to $$TIMEZONE. Use exchange_prices_local view for local time display.'" && \
+	docker exec -it $(shell docker ps -q --filter "name=timescaledb") psql -U $$DATABASE_USER -d $$DATABASE_NAME
 
 db-timezone:
 	@TIMEZONE=$$(uv run python -c "from config.settings import TIMEZONE; print(TIMEZONE)") && \
+	DATABASE_USER=$$(uv run python -c "from config.settings import DATABASE_USER; print(DATABASE_USER)") && \
+	DATABASE_NAME=$$(uv run python -c "from config.settings import DATABASE_NAME; print(DATABASE_NAME)") && \
 	echo "🕒 Setting database default timezone to: $$TIMEZONE" && \
-	docker exec $(shell docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage -c "ALTER DATABASE arbitrage SET timezone = '$$TIMEZONE';" && \
+	docker exec $(shell docker ps -q --filter "name=timescaledb") psql -U $$DATABASE_USER -d $$DATABASE_NAME -c "ALTER DATABASE $$DATABASE_NAME SET timezone = '$$TIMEZONE';" && \
 	echo "✅ Database default timezone updated. Restart database for full effect."

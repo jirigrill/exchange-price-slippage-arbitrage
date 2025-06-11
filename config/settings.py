@@ -37,10 +37,17 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 # Database configuration
 # Can be overridden by DATABASE_ENABLED environment variable
 DATABASE_ENABLED = os.getenv("DATABASE_ENABLED", "true").lower() == "true"
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://arbitrage_user:arbitrage_pass@localhost:5432/arbitrage",
-)
+
+# Individual database connection settings
+DATABASE_HOST = os.getenv("DATABASE_HOST", "localhost")
+DATABASE_PORT = int(os.getenv("DATABASE_PORT", "5433"))
+DATABASE_NAME = os.getenv("DATABASE_NAME", "arbitrage")
+DATABASE_USER = os.getenv("DATABASE_USER", "arbitrage_user")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD", "arbitrage_pass")
+
+# Auto-construct DATABASE_URL from individual settings if not explicitly provided
+_default_database_url = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+DATABASE_URL = os.getenv("DATABASE_URL", _default_database_url)
 
 # Database is optional - system works without it but loses historical data and analytics
 # Set DATABASE_ENABLED=false in .env or via environment to disable completely
