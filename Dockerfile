@@ -15,6 +15,7 @@ RUN pip install uv
 COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src/
 COPY config/ ./config/
+COPY sql/ ./sql/
 COPY main.py ./
 
 # Create logs directory
@@ -28,9 +29,9 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
 
-# Health check
+# Health check - verify the application can import properly
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD uv run python -c "import sys; sys.exit(0)"
+    CMD uv run python -c "from config.settings import DATABASE_ENABLED; import sys; sys.exit(0)"
 
 # Run the application with unbuffered output
 CMD ["uv", "run", "python", "-u", "main.py"]

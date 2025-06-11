@@ -1,4 +1,4 @@
-.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test
+.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone
 
 # Default target
 help:
@@ -25,14 +25,37 @@ help:
 	@echo "  docker-run       Run with Docker Compose"
 	@echo "  docker-deploy    Deploy with production settings"
 	@echo ""
+	@echo "Database (Optional):"
+	@echo "  db-up            Start TimescaleDB container"
+	@echo "  db-down          Stop TimescaleDB container"
+	@echo "  db-logs          View database logs"
+	@echo "  db-reset         Reset database (destructive!)"
+	@echo "  db-test          Run database integration tests"
+	@echo "  db-connect       Connect to database with local timezone"
+	@echo "  db-timezone      Set database default timezone from .env"
+	@echo "  Note: 'make run' auto-starts database if enabled"
+	@echo ""
 	@echo "Example: make install && make test-unit && make run"
 
 # Development commands
 install:
 	uv sync
 
-run:
+run: db-ensure
 	uv run python main.py
+
+# Check if database is needed and start if required
+db-ensure:
+	@DB_ENABLED=$$(uv run python -c "from config.settings import DATABASE_ENABLED; print('true' if DATABASE_ENABLED else 'false')") && \
+	DB_RUNNING=$$(docker ps -q --filter 'name=timescaledb' | wc -l | tr -d ' ') && \
+	if [ "$$DB_ENABLED" = "true" ] && [ "$$DB_RUNNING" = "0" ]; then \
+		echo "🔄 Database required but not running - starting TimescaleDB..."; \
+		make db-up; \
+	elif [ "$$DB_ENABLED" = "false" ]; then \
+		echo "📊 Database disabled - running without TimescaleDB"; \
+	elif [ "$$DB_ENABLED" = "true" ] && [ "$$DB_RUNNING" != "0" ]; then \
+		echo "✅ TimescaleDB already running"; \
+	fi
 
 format:
 	uv run black .
@@ -82,8 +105,45 @@ check: fix lint test-unit
 	@echo "✅ All quality checks passed!"
 
 # Quick development cycle
-dev: install format test-unit run
+dev: install format test-unit db-ensure run
 
 # Full CI pipeline
 ci: install fix lint test
 	@echo "✅ CI pipeline completed successfully!"
+
+# Database commands
+db-up:
+	docker-compose up -d timescaledb
+	@echo "⏳ Waiting for database to be ready..."
+	@sleep 10
+	@echo "✅ TimescaleDB is running on port 5432"
+
+db-down:
+	docker-compose down timescaledb
+
+db-logs:
+	docker-compose logs -f timescaledb
+
+db-reset:
+	@echo "⚠️  This will delete all database data! Press Ctrl+C to cancel..."
+	@sleep 5
+	docker-compose down timescaledb
+	docker volume rm exchange-price-slippage-arbitrage_timescale_data 2>/dev/null || true
+	docker-compose up -d timescaledb
+	@echo "🔄 Database reset complete"
+
+db-test: db-up
+	@echo "🧪 Running database integration tests..."
+	SKIP_DB_INTEGRATION=false uv run pytest tests/integration/test_database_integration.py -v
+
+db-connect:
+	@TIMEZONE=$$(uv run python -c "from config.settings import TIMEZONE; print(TIMEZONE)") && \
+	echo "🔗 Connecting to database with timezone: $$TIMEZONE" && \
+	docker exec -it $(shell docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage -c "SET timezone = '$$TIMEZONE';" -c "\echo 'Timezone set to $$TIMEZONE. Use exchange_prices_local view for local time display.'" && \
+	docker exec -it $(shell docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage
+
+db-timezone:
+	@TIMEZONE=$$(uv run python -c "from config.settings import TIMEZONE; print(TIMEZONE)") && \
+	echo "🕒 Setting database default timezone to: $$TIMEZONE" && \
+	docker exec $(shell docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage -c "ALTER DATABASE arbitrage SET timezone = '$$TIMEZONE';" && \
+	echo "✅ Database default timezone updated. Restart database for full effect."

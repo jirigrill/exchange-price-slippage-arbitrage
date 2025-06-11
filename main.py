@@ -5,6 +5,8 @@ from config.settings import (
     ALL_EXCHANGES,
     API_KEYS,
     COINMATE_TRADING_FEE,
+    DATABASE_ENABLED,
+    DATABASE_URL,
     DYNAMIC_FEES_ENABLED,
     EXCHANGE_TRADING_PAIRS,
     KRAKEN_TRADING_FEE,
@@ -16,6 +18,7 @@ from config.settings import (
 )
 from src.core.arbitrage_detector import ArbitrageDetector
 from src.core.exchange_monitor import ExchangeMonitor
+from src.services.database_service import DatabaseService
 from src.services.telegram_service import TelegramService
 from src.utils.logging import log_with_timestamp
 
@@ -44,16 +47,34 @@ async def main():
         )
     else:
         log_with_timestamp("📱 Telegram alerts: disabled")
+
+    if DATABASE_ENABLED:
+        log_with_timestamp("📊 Database: enabled (TimescaleDB)")
+    else:
+        log_with_timestamp("📊 Database: disabled")
+
     print("-" * 50)
 
     # Force flush output
     sys.stdout.flush()
 
+    # Initialize database service
+    database_service = DatabaseService(DATABASE_URL, DATABASE_ENABLED)
+    if not await database_service.initialize():
+        log_with_timestamp(
+            "⚠ Database initialization failed - continuing without database"
+        )
+        database_service = None
+
     # Initialize services
     monitor = ExchangeMonitor(
-        ALL_EXCHANGES, EXCHANGE_TRADING_PAIRS, API_KEYS, TRADING_SYMBOL
+        ALL_EXCHANGES,
+        EXCHANGE_TRADING_PAIRS,
+        API_KEYS,
+        TRADING_SYMBOL,
+        database_service,
     )
-    detector = ArbitrageDetector(monitor, MIN_PROFIT_PERCENTAGE)
+    detector = ArbitrageDetector(monitor, MIN_PROFIT_PERCENTAGE, database_service)
     telegram = TelegramService(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_ENABLED)
 
     # Test Telegram connection if enabled
@@ -164,7 +185,12 @@ async def main():
                 log_with_timestamp(f"Error in monitoring loop: {e}")
                 await asyncio.sleep(1)
 
-    await monitor_and_detect()
+    try:
+        await monitor_and_detect()
+    finally:
+        # Cleanup database connection
+        if database_service:
+            await database_service.close()
 
 
 if __name__ == "__main__":

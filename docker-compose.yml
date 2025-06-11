@@ -1,17 +1,66 @@
 services:
-  arbitrage-monitor:
-    build: .
-    container_name: bitcoin-arbitrage-monitor
+  timescaledb:
+    image: timescale/timescaledb:2.16.1-pg16
+    container_name: arbitrage-timescaledb
     restart: unless-stopped
     environment:
+      - POSTGRES_DB=${POSTGRES_DB:-arbitrage}
+      - POSTGRES_USER=${POSTGRES_USER:-arbitrage_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-arbitrage_pass}
+      - TS_TUNE_MEMORY=2GB
+      - TS_TUNE_NUM_CPUS=2
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - arbitrage-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-arbitrage_user} -d ${POSTGRES_DB:-arbitrage}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  arbitrage-monitor:
+    build: .
+    container_name: arbitrage-monitor
+    restart: unless-stopped
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
       - PYTHONUNBUFFERED=1
+      # Core monitoring settings
       - MIN_PROFIT_PERCENTAGE=${MIN_PROFIT_PERCENTAGE:-0.1}
+      # Trading fee configuration
+      - KRAKEN_TRADING_FEE=${KRAKEN_TRADING_FEE:-0.26}
+      - COINMATE_TRADING_FEE=${COINMATE_TRADING_FEE:-0.35}
+      - DEFAULT_TRADING_FEE=${DEFAULT_TRADING_FEE:-0.25}
+      - DYNAMIC_FEES_ENABLED=${DYNAMIC_FEES_ENABLED:-false}
+      # Exchange API keys (optional)
       - KRAKEN_API_KEY=${KRAKEN_API_KEY:-}
       - KRAKEN_SECRET_KEY=${KRAKEN_SECRET_KEY:-}
       - COINMATE_API_KEY=${COINMATE_API_KEY:-}
       - COINMATE_SECRET_KEY=${COINMATE_SECRET_KEY:-}
       - COINMATE_CLIENT_ID=${COINMATE_CLIENT_ID:-}
-      - SANDBOX_MODE=${SANDBOX_MODE:-true}
+      # Telegram notifications
+      - TELEGRAM_ENABLED=${TELEGRAM_ENABLED:-true}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      # Database configuration
+      - DATABASE_ENABLED=${DATABASE_ENABLED:-true}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-arbitrage_user}:${POSTGRES_PASSWORD:-arbitrage_pass}@timescaledb:5432/${POSTGRES_DB:-arbitrage}
+      - DB_RETENTION_DAYS=${DB_RETENTION_DAYS:-30}
+      - TIMEZONE=${TIMEZONE:-UTC}
+      # Development settings
+      - SANDBOX_MODE=${SANDBOX_MODE:-false}
     volumes:
       - ./logs:/app/logs
       - ./.env:/app/.env:ro
@@ -34,4 +83,4 @@ networks:
     driver: bridge
 
 volumes:
-  arbitrage-logs:
+  timescale_data:

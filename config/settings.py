@@ -34,6 +34,25 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 # Telegram notifications will use the same threshold as MIN_PROFIT_PERCENTAGE
 # No separate threshold needed - alert on every detected opportunity
 
+# Database configuration
+# Can be overridden by DATABASE_ENABLED environment variable
+DATABASE_ENABLED = os.getenv("DATABASE_ENABLED", "true").lower() == "true"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://arbitrage_user:arbitrage_pass@localhost:5432/arbitrage",
+)
+
+# Database is optional - system works without it but loses historical data and analytics
+# Set DATABASE_ENABLED=false in .env or via environment to disable completely
+
+# Database settings
+DB_RETENTION_DAYS = int(os.getenv("DB_RETENTION_DAYS", "30"))
+DB_BATCH_SIZE = int(os.getenv("DB_BATCH_SIZE", "100"))
+
+# Timezone configuration for database timestamp display
+# Data is always stored in UTC, but this controls how timestamps are displayed in queries
+TIMEZONE = os.getenv("TIMEZONE", "UTC")
+
 
 API_KEYS = {
     "kraken": {

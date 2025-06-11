@@ -27,8 +27,11 @@ The system automatically converts all prices to USD for accurate comparison and 
 - ✅ **Arbitrage Detection**: Automated opportunity identification with profit calculations
 - ✅ **Configurable Trading Fees**: Per-exchange fee configuration with optional dynamic fetching
 - ✅ **Telegram Notifications**: Instant alerts for profitable opportunities (can be disabled)
+- ✅ **TimescaleDB Integration**: Optional historical data storage and analytics (fully optional)
+- ✅ **Abstract Exchange API**: Polymorphic interface for easy exchange expansion
 - ✅ **Async Architecture**: Efficient concurrent price monitoring
-- ✅ **Comprehensive Testing**: Full pytest suite with 68 tests
+- ✅ **Auto Database Management**: Smart container startup and graceful fallback
+- ✅ **Comprehensive Testing**: Full pytest suite with 100+ tests
 - ✅ **Environment Configuration**: Flexible setup via environment variables
 
 ## Installation
@@ -80,8 +83,11 @@ make help
 # Quick development setup (install + format + test + run)
 make dev
 
-# Just run the monitor
+# Just run the monitor (auto-starts database if enabled)
 make run
+
+# Run without database for lightweight monitoring
+DATABASE_ENABLED=false make run
 ```
 
 ### Basic Monitoring
@@ -173,6 +179,18 @@ COINMATE_SECRET_KEY=your_coinmate_secret_key
 COINMATE_CLIENT_ID=your_coinmate_client_id
 ```
 
+**Database Configuration (Optional):**
+```bash
+# Enable/disable TimescaleDB for historical data storage
+# System works perfectly without database - just loses historical data
+DATABASE_ENABLED=true
+# PostgreSQL connection URL for TimescaleDB
+# Default connects to localhost TimescaleDB container started by 'make db-up'
+DATABASE_URL=postgresql://arbitrage_user:arbitrage_pass@localhost:5432/arbitrage
+# Data retention period in days
+DB_RETENTION_DAYS=30
+```
+
 **Note:** Basic price monitoring works without any configuration!
 
 ## 📱 Telegram Notifications Setup
@@ -235,6 +253,88 @@ make run
 - Reasons why Telegram notifications are disabled
 - All arbitrage opportunities are still detected and logged
 
+## 📊 TimescaleDB Integration (Optional)
+
+The system includes optional TimescaleDB integration for historical data storage and advanced analytics.
+
+### Features
+
+- **Completely Optional**: System works perfectly without database
+- **Auto-Start**: `make run` automatically starts TimescaleDB container if enabled
+- **Graceful Fallback**: Continues monitoring if database connection fails
+- **Time-Series Optimized**: Hypertables for efficient price data storage
+- **Real-Time Analytics**: Built-in views and functions for analysis
+
+### Quick Start
+
+```bash
+# Enable database and run (auto-starts TimescaleDB container)
+make run
+
+# Manually start database
+make db-up
+
+# Connect to database
+docker exec -it $(docker ps -q --filter "name=timescaledb") psql -U arbitrage_user -d arbitrage
+
+# View stored data
+SELECT * FROM get_latest_prices();
+```
+
+### Database Operations
+
+```bash
+# Database management
+make db-up          # Start TimescaleDB container
+make db-down        # Stop TimescaleDB
+make db-logs        # View database logs
+make db-reset       # Reset database (destructive!)
+make db-test        # Run database integration tests
+
+# Database access with timezone support
+make db-connect     # Connect to database with local timezone
+make db-timezone    # Set database default timezone from .env
+
+# Run without database
+DATABASE_ENABLED=false make run
+```
+
+### What Gets Stored
+
+1. **Price Data**: All fetched prices with timestamps
+2. **Arbitrage Opportunities**: Detected profitable opportunities
+3. **Exchange Health**: API response times and error tracking
+4. **Analytics Views**: Pre-computed spreads and summaries
+
+### Sample Queries
+
+```sql
+-- Recent arbitrage opportunities (in your local timezone)
+SELECT buy_exchange, sell_exchange, profit_percentage, profit_usd, local_timestamp
+FROM arbitrage_opportunities_local 
+WHERE utc_timestamp >= NOW() - INTERVAL '24 hours'
+ORDER BY profit_percentage DESC;
+
+-- Exchange prices (in your local timezone)
+SELECT exchange_name, price_usd, local_timestamp, utc_timestamp
+FROM exchange_prices_local 
+ORDER BY local_timestamp DESC LIMIT 10;
+
+-- Price spread history
+SELECT * FROM get_price_spread_history(24);
+
+-- Exchange performance
+SELECT exchange_name, COUNT(*) as requests, 
+       AVG(response_time_ms) as avg_response_time
+FROM exchange_status 
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+GROUP BY exchange_name;
+```
+
+### Disable Database
+
+Set `DATABASE_ENABLED=false` in `.env` or environment variable to run lightweight monitoring without any database dependencies.
+
 ## Project Structure
 
 ### Current Structure
@@ -243,56 +343,68 @@ make run
 exchange-price-slippage-arbitrage/
 ├── src/
 │   ├── __init__.py
-│   ├── apis/                   # External API integrations
+│   ├── apis/                      # External API integrations
 │   │   ├── __init__.py
-│   │   ├── coinmate_api.py        # Dedicated Coinmate API client
-│   │   └── kraken_api.py          # Dedicated Kraken API client
-│   ├── core/                   # Core business logic
+│   │   ├── base_exchange.py          # Abstract base class for exchanges
+│   │   ├── coinmate_api.py           # Coinmate API implementation
+│   │   └── kraken_api.py             # Kraken API implementation
+│   ├── core/                      # Core business logic
 │   │   ├── __init__.py
-│   │   ├── arbitrage_detector.py  # Arbitrage opportunity detection
-│   │   └── exchange_monitor.py    # Real-time price monitoring
-│   ├── services/               # Business services
+│   │   ├── arbitrage_detector.py     # Arbitrage opportunity detection
+│   │   ├── data_models.py            # Shared data classes
+│   │   └── exchange_monitor.py       # Real-time price monitoring
+│   ├── services/                  # Business services
 │   │   ├── __init__.py
-│   │   ├── currency_converter.py  # USD/CZK conversion
-│   │   └── telegram_service.py    # Telegram notifications
-│   └── utils/                  # Shared utilities
+│   │   ├── currency_converter.py     # USD/CZK conversion
+│   │   ├── database_service.py       # TimescaleDB integration
+│   │   └── telegram_service.py       # Telegram notifications
+│   └── utils/                     # Shared utilities
 │       ├── __init__.py
-│       └── logging.py             # Logging utilities
-├── config/                     # Configuration files
+│       └── logging.py                # Logging utilities
+├── config/                        # Configuration files
 │   ├── __init__.py
-│   └── settings.py             # Configuration settings
-├── tests/                      # Comprehensive test suite
+│   └── settings.py                   # Configuration settings
+├── sql/                           # Database schema and migrations
+│   └── init.sql                      # TimescaleDB initialization
+├── tests/                         # Comprehensive test suite (100+ tests)
 │   ├── __init__.py
-│   ├── conftest.py            # Shared test fixtures
-│   ├── test_runner.py         # Test runner script
-│   ├── unit/                  # Unit tests (62 tests)
+│   ├── conftest.py                   # Shared test fixtures
+│   ├── test_runner.py                # Test runner script
+│   ├── unit/                         # Unit tests
 │   │   ├── test_arbitrage_detector.py
 │   │   ├── test_coinmate_api.py
 │   │   ├── test_currency_converter.py
 │   │   ├── test_kraken_api.py
 │   │   └── test_telegram_service.py
-│   └── integration/           # Integration tests
-│       └── test_telegram.py   # Real Telegram API tests
-├── docs/                       # Documentation
-│   └── DEPLOYMENT.md          # Deployment guide
-├── monitoring/                 # Monitoring and logging
-│   └── logrotate.conf         # Log rotation configuration
-├── logs/                       # Application logs (created at runtime)
-├── Dockerfile                  # Docker container definition
-├── docker-compose.yml          # Docker Compose configuration
-├── deploy.sh                   # Simple deployment script
-├── main.py                     # Main application entry point
-├── pyproject.toml              # UV project configuration
-├── uv.lock                     # UV lock file
-└── README.md                   # This file
+│   └── integration/                  # Integration tests
+│       ├── test_database_integration.py  # Database tests
+│       └── test_telegram.py             # Telegram API tests
+├── docs/                          # Documentation
+│   └── DEPLOYMENT.md                 # Deployment guide
+├── monitoring/                    # Monitoring and logging
+│   └── logrotate.conf                # Log rotation configuration
+├── logs/                          # Application logs (created at runtime)
+├── .env.example                   # Environment variables template
+├── CLAUDE.md                      # AI assistant instructions
+├── Dockerfile                     # Docker container definition
+├── docker-compose.yml             # Docker Compose + TimescaleDB
+├── deploy.sh                      # Simple deployment script
+├── Makefile                       # Development commands
+├── main.py                        # Main application entry point
+├── pyproject.toml                 # UV project configuration
+├── uv.lock                        # UV lock file
+└── README.md                      # This file
 ```
 
 **Benefits of this structure:**
-- **Clear separation of concerns**: APIs, core logic, and utilities are isolated
-- **Scalability**: Easy to add new exchanges in `apis/` directory
+- **Clear separation of concerns**: APIs, core logic, and utilities are isolated  
+- **Polymorphic design**: Abstract base class allows easy exchange expansion
+- **Database integration**: Optional TimescaleDB with full schema management
+- **Scalability**: Easy to add new exchanges via BaseExchangeAPI interface
 - **Maintainability**: Related files grouped together
-- **Testing organization**: Tests mirror source structure
+- **Testing organization**: Tests mirror source structure with database tests
 - **Configuration management**: All config in dedicated directory
+- **Documentation**: Comprehensive docs with SQL examples and AI instructions
 
 ## Supported Exchanges
 
@@ -308,11 +420,13 @@ exchange-price-slippage-arbitrage/
 
 ### Adding More Exchanges
 
-The architecture supports easy expansion:
+The polymorphic architecture supports easy expansion:
 1. Add exchange to `config/settings.py` 
 2. Specify trading pair in `EXCHANGE_TRADING_PAIRS`
-3. Create custom API client in `src/apis/` directory
-4. Add support in `ExchangeMonitor.fetch_price()` method
+3. Create API client inheriting from `BaseExchangeAPI` in `src/apis/`
+4. Implement required abstract methods: `get_ticker()`, `normalize_pair()`, etc.
+5. Add factory support in `create_exchange_api()` function
+6. The system automatically uses the new exchange via polymorphism
 
 ## 🚀 Production Deployment
 
@@ -575,15 +689,16 @@ docker-compose up -d
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 68 tests:
+The project includes a comprehensive test suite with 100+ tests:
 
 ```bash
 # Using Makefile (recommended)
 make test                    # Run all tests
-make test-unit              # Run only unit tests (62 tests)
-make test-integration       # Run integration tests (6 tests)
+make test-unit              # Run only unit tests (76 tests)
+make test-integration       # Run integration tests
 make test-coverage          # Run with coverage report
 make telegram-test          # Test Telegram integration
+make db-test                # Test database integration
 
 # Quick pre-commit checks
 make check                  # format + lint + unit tests
@@ -635,6 +750,7 @@ uv run flake8 .
 
 ### Core Dependencies
 - **aiohttp**: Async HTTP client (Kraken API, Coinmate API, currency conversion)
+- **asyncpg**: Async PostgreSQL driver for TimescaleDB integration
 - **python-dotenv**: Environment variable management
 - **numpy/pandas**: Data analysis and manipulation
 - **requests/websocket-client**: HTTP and WebSocket support
@@ -648,9 +764,10 @@ uv run flake8 .
 
 ### Key Features
 - **Multi-currency support**: USD, CZK conversion
-- **Native APIs**: Direct Kraken and Coinmate API clients (no third-party dependencies)
+- **Native APIs**: Direct Kraken and Coinmate API clients with abstract base class
+- **TimescaleDB integration**: Optional time-series database for analytics
 - **Real-time data**: Live exchange rates and price monitoring
-- **Comprehensive testing**: 68 tests covering all components
+- **Comprehensive testing**: 100+ tests covering all components including database
 
 ## Contributing
 

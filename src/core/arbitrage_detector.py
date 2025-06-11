@@ -1,6 +1,5 @@
 import time
-from dataclasses import dataclass
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from config.settings import (
     COINMATE_TRADING_FEE,
@@ -13,23 +12,20 @@ from config.settings import (
 
 from ..apis.base_exchange import create_exchange_api
 from ..utils.logging import log_with_timestamp
-from .exchange_monitor import ExchangeMonitor, PriceData
+from .data_models import ArbitrageOpportunity, PriceData
+from .exchange_monitor import ExchangeMonitor
 
-
-@dataclass
-class ArbitrageOpportunity:
-    buy_exchange: str
-    sell_exchange: str
-    buy_price: float
-    sell_price: float
-    profit_usd: float
-    profit_percentage: float
-    timestamp: float
-    volume_limit: float
+if TYPE_CHECKING:
+    from ..services.database_service import DatabaseService
 
 
 class ArbitrageDetector:
-    def __init__(self, monitor: ExchangeMonitor, min_profit_percentage: float = 0.1):
+    def __init__(
+        self,
+        monitor: ExchangeMonitor,
+        min_profit_percentage: float = 0.1,
+        database_service: Optional["DatabaseService"] = None,
+    ):
         self.monitor = monitor
         self.min_profit_percentage = min_profit_percentage
         self.opportunities = []
@@ -37,6 +33,7 @@ class ArbitrageDetector:
         self.small_exchanges = SMALL_EXCHANGES
         self._fee_cache = {}  # Cache for dynamic fees
         self._fee_cache_timestamp = {}  # Cache timestamps
+        self.database_service = database_service
 
     async def detect_opportunities(self) -> List[ArbitrageOpportunity]:
         """
@@ -66,6 +63,12 @@ class ArbitrageDetector:
                         and opportunity.profit_percentage >= self.min_profit_percentage
                     ):
                         current_opportunities.append(opportunity)
+
+                        # Store opportunity in database asynchronously
+                        if self.database_service:
+                            await self.database_service.store_arbitrage_opportunity(
+                                opportunity
+                            )
 
         current_opportunities.sort(key=lambda x: x.profit_percentage, reverse=True)
         self.opportunities.extend(current_opportunities)

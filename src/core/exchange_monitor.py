@@ -1,21 +1,13 @@
 import time
-from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from ..apis.base_exchange import BaseExchangeAPI, create_exchange_api
 from ..services.currency_converter import CurrencyConverter
 from ..utils.logging import log_with_timestamp
+from .data_models import PriceData
 
-
-@dataclass
-class PriceData:
-    exchange: str
-    symbol: str
-    price: float
-    price_usd: float  # Price converted to USD
-    original_currency: str  # Original quote currency
-    timestamp: float
-    volume: float = 0.0
+if TYPE_CHECKING:
+    from ..services.database_service import DatabaseService
 
 
 class ExchangeMonitor:
@@ -25,6 +17,7 @@ class ExchangeMonitor:
         trading_pairs: Dict[str, str],
         api_keys: Dict[str, Dict] = None,
         symbol: str = "BTC/USDT",
+        database_service: Optional["DatabaseService"] = None,
     ):
         self.exchanges = exchanges
         self.symbol = symbol
@@ -33,6 +26,7 @@ class ExchangeMonitor:
         self.latest_prices = {}
         self.price_history = []
         self.currency_converter = CurrencyConverter()
+        self.database_service = database_service
 
         for exchange_name in exchanges:
             try:
@@ -44,6 +38,7 @@ class ExchangeMonitor:
         """Fetch price using the abstract exchange API interface"""
         # Get the trading pair for this exchange
         trading_pair = self.trading_pairs.get(exchange_name, self.symbol)
+        start_time = time.time()
 
         try:
             # Get API credentials if available
@@ -58,17 +53,35 @@ class ExchangeMonitor:
             )
 
             price_data = await self._fetch_price_generic(exchange_api, trading_pair)
+            response_time_ms = int((time.time() - start_time) * 1000)
 
             if price_data:
                 self.latest_prices[exchange_name] = price_data
                 self.price_history.append(price_data)
 
+                # Store in database asynchronously (non-blocking)
+                if self.database_service:
+                    await self.database_service.store_price_data(price_data)
+                    await self.database_service.store_exchange_status(
+                        exchange_name, "active", None, response_time_ms
+                    )
+
             return price_data
 
         except ValueError as e:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            if self.database_service:
+                await self.database_service.store_exchange_status(
+                    exchange_name, "error", str(e), response_time_ms
+                )
             log_with_timestamp(f"✗ {e}")
             return None
         except Exception as e:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            if self.database_service:
+                await self.database_service.store_exchange_status(
+                    exchange_name, "error", str(e), response_time_ms
+                )
             log_with_timestamp(f"✗ Error fetching price from {exchange_name}: {e}")
             return None
 
