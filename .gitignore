@@ -211,6 +211,7 @@ data/
 *.json
 !pyproject.toml
 !package.json
+!grafana/dashboards/*.json
 
 # Temporary files
 temp/
