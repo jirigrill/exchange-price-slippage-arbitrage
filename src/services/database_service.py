@@ -292,15 +292,18 @@ class DatabaseService:
                     return []
 
                 # Use timezone-aware query
-                timezone_expr = self._get_timezone_expression("time_bucket('1 hour', ep.timestamp)")
+                timezone_expr = self._get_timezone_expression(
+                    "time_bucket('1 hour', ep.timestamp)"
+                )
                 query = f"""
-                    SELECT 
+                    SELECT
                         {timezone_expr} as bucket,
                         MIN(ep.price_usd) as min_price,
                         MAX(ep.price_usd) as max_price,
                         (MAX(ep.price_usd) - MIN(ep.price_usd)) as spread_usd,
-                        CASE 
-                            WHEN MIN(ep.price_usd) > 0 THEN ((MAX(ep.price_usd) - MIN(ep.price_usd)) / MIN(ep.price_usd)) * 100
+                        CASE
+                            WHEN MIN(ep.price_usd) > 0 THEN
+                                ((MAX(ep.price_usd) - MIN(ep.price_usd)) / MIN(ep.price_usd)) * 100
                             ELSE 0
                         END as spread_percentage
                     FROM exchange_prices ep
@@ -339,7 +342,7 @@ class DatabaseService:
 
                 timezone_expr = self._get_timezone_expression("timestamp")
                 query = f"""
-                    SELECT 
+                    SELECT
                         buy_exchange,
                         sell_exchange,
                         buy_price,
@@ -348,10 +351,10 @@ class DatabaseService:
                         profit_percentage,
                         volume_limit,
                         {timezone_expr} as timestamp
-                    FROM arbitrage_opportunities 
+                    FROM arbitrage_opportunities
                     WHERE timestamp >= NOW() - INTERVAL '{hours} hours'
-                        AND profit_percentage >= $1 
-                    ORDER BY timestamp DESC, profit_percentage DESC 
+                        AND profit_percentage >= $1
+                    ORDER BY timestamp DESC, profit_percentage DESC
                     LIMIT 100
                 """
                 rows = await conn.fetch(query, min_profit)

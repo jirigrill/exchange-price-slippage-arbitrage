@@ -46,7 +46,10 @@ DATABASE_USER = os.getenv("DATABASE_USER", "arbitrage_user")
 DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD", "arbitrage_pass")
 
 # Auto-construct DATABASE_URL from individual settings if not explicitly provided
-_default_database_url = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+_default_database_url = (
+    f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@"
+    f"{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+)
 DATABASE_URL = os.getenv("DATABASE_URL", _default_database_url)
 
 # Database is optional - system works without it but loses historical data and analytics

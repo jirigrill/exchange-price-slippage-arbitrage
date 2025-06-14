@@ -1,4 +1,4 @@
-.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone
+.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone grafana-up grafana-down grafana-logs
 
 # Default target
 help:
@@ -34,6 +34,11 @@ help:
 	@echo "  db-connect       Connect to database with local timezone"
 	@echo "  db-timezone      Set database default timezone from .env"
 	@echo "  Note: 'make run' auto-starts database if enabled"
+	@echo ""
+	@echo "Analytics (Optional):"
+	@echo "  grafana-up       Start Grafana dashboard for data analysis"
+	@echo "  grafana-down     Stop Grafana"
+	@echo "  grafana-logs     View Grafana logs"
 	@echo ""
 	@echo "Example: make install && make test-unit && make run"
 
@@ -152,3 +157,22 @@ db-timezone:
 	echo "🕒 Setting database default timezone to: $$TIMEZONE" && \
 	docker exec $(shell docker ps -q --filter "name=timescaledb") psql -U $$DATABASE_USER -d $$DATABASE_NAME -c "ALTER DATABASE $$DATABASE_NAME SET timezone = '$$TIMEZONE';" && \
 	echo "✅ Database default timezone updated. Restart database for full effect."
+
+# Grafana commands
+grafana-up: db-ensure
+	@GRAFANA_ENABLED=$$(uv run python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('GRAFANA_ENABLED', 'true').lower())") && \
+	if [ "$$GRAFANA_ENABLED" = "true" ]; then \
+		echo "📊 Starting Grafana dashboard..."; \
+		docker-compose -f docker-compose.yml -f docker-compose.grafana.yml up -d grafana; \
+		GRAFANA_PORT=$$(uv run python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('GRAFANA_PORT', '3000'))") && \
+		echo "✅ Grafana available at http://localhost:$$GRAFANA_PORT"; \
+		echo "💡 Default login: admin / (check GRAFANA_ADMIN_PASSWORD in .env)"; \
+	else \
+		echo "📊 Grafana disabled via GRAFANA_ENABLED=false"; \
+	fi
+
+grafana-down:
+	docker-compose -f docker-compose.yml -f docker-compose.grafana.yml down grafana
+
+grafana-logs:
+	docker-compose -f docker-compose.yml -f docker-compose.grafana.yml logs -f grafana
