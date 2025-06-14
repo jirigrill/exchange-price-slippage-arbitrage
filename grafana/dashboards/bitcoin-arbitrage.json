@@ -1,3 +1,4 @@
+{"dashboard":
 {
   "annotations": {
     "list": [
@@ -409,36 +410,21 @@
               }
             ]
           },
-          "unit": "currencyUSD",
-          "decimals": 2
+          "unit": "percent",
+          "decimals": 3
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "kraken_usd"
+              "options": "price_spread_pct"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "blue"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "coinmate_usd"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "yellow"
+                  "fixedColor": "purple"
                 }
               }
             ]
@@ -478,7 +464,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp AS \"time\",\n  CASE \n    WHEN exchange_name = 'kraken' THEN 'kraken_usd'\n    WHEN exchange_name = 'coinmate' THEN 'coinmate_usd'\n    ELSE exchange_name\n  END as metric,\n  price_usd\nFROM exchange_prices\nWHERE\n  $__timeFilter(timestamp)\nORDER BY timestamp",
+          "rawSql": "WITH price_data AS (\n  SELECT \n    time_bucket('1 minute', timestamp) AS time_bucket,\n    exchange_name,\n    AVG(price_usd) as avg_price\n  FROM exchange_prices\n  WHERE $__timeFilter(timestamp)\n  GROUP BY time_bucket, exchange_name\n)\nSELECT \n  time_bucket AS \"time\",\n  'price_spread_pct' as metric,\n  ((MAX(CASE WHEN exchange_name = 'coinmate' THEN avg_price END) - \n    MAX(CASE WHEN exchange_name = 'kraken' THEN avg_price END)) / \n   MAX(CASE WHEN exchange_name = 'kraken' THEN avg_price END)) * 100 as value\nFROM price_data\nGROUP BY time_bucket\nHAVING COUNT(DISTINCT exchange_name) = 2\nORDER BY time_bucket",
           "refId": "A",
           "select": [
             [
@@ -502,7 +488,7 @@
           ]
         }
       ],
-      "title": "BTC Prices Over Time",
+      "title": "Price Spread Percentage Over Time",
       "type": "timeseries"
     },
     {
@@ -755,6 +741,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "NEUTRAL"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "grey"
+                }
+              }
+            ]
           }
         ]
       },
@@ -790,7 +791,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "WITH price_comparison AS (\n  SELECT \n    k.timestamp,\n    k.price_usd as kraken_price,\n    c.price_usd as coinmate_price,\n    ((c.price_usd - k.price_usd) / k.price_usd) * 100 as spread_pct\n  FROM exchange_prices k\n  JOIN exchange_prices c ON \n    ABS(EXTRACT(EPOCH FROM (c.timestamp - k.timestamp))) <= 60\n  WHERE k.exchange_name = 'kraken' \n    AND c.exchange_name = 'coinmate'\n    AND $__timeFilter(k.timestamp)\n)\nSELECT \n  timestamp AS \"time\",\n  CASE \n    WHEN spread_pct < -3.0 THEN 'STRONG_BUY_coinmate'\n    WHEN spread_pct < -1.5 THEN 'BUY_on_coinmate'\n    WHEN spread_pct > 3.0 THEN 'STRONG_SELL_coinmate'\n    WHEN spread_pct > 1.5 THEN 'SELL_on_coinmate'\n    ELSE NULL\n  END as metric,\n  ABS(spread_pct) as value\nFROM price_comparison\nWHERE ABS(spread_pct) > 1.5\nORDER BY timestamp",
+          "rawSql": "SELECT \n  time_bucket('2 minutes', timestamp) AS \"time\",\n  CASE \n    WHEN ((AVG(CASE WHEN exchange_name = 'coinmate' THEN price_usd END) - \n           AVG(CASE WHEN exchange_name = 'kraken' THEN price_usd END)) / \n          AVG(CASE WHEN exchange_name = 'kraken' THEN price_usd END)) * 100 < -0.05 \n    THEN 'BUY_on_coinmate'\n    WHEN ((AVG(CASE WHEN exchange_name = 'coinmate' THEN price_usd END) - \n           AVG(CASE WHEN exchange_name = 'kraken' THEN price_usd END)) / \n          AVG(CASE WHEN exchange_name = 'kraken' THEN price_usd END)) * 100 > 0.05 \n    THEN 'SELL_on_coinmate'\n    ELSE 'NEUTRAL'\n  END as metric,\n  ABS(((AVG(CASE WHEN exchange_name = 'coinmate' THEN price_usd END) - \n        AVG(CASE WHEN exchange_name = 'kraken' THEN price_usd END)) / \n       AVG(CASE WHEN exchange_name = 'kraken' THEN price_usd END)) * 100) as value\nFROM exchange_prices\nWHERE $__timeFilter(timestamp)\nGROUP BY time_bucket('2 minutes', timestamp)\nHAVING COUNT(DISTINCT exchange_name) = 2\nORDER BY \"time\" DESC\nLIMIT 500",
           "refId": "A",
           "select": [
             [
@@ -936,7 +937,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "WITH price_comparison AS (\n  SELECT \n    k.timestamp,\n    k.price_usd as kraken_price,\n    c.price_usd as coinmate_price,\n    ((c.price_usd - k.price_usd) / k.price_usd) * 100 as spread_pct,\n    ABS(c.price_usd - k.price_usd) as spread_usd\n  FROM exchange_prices k\n  JOIN exchange_prices c ON \n    ABS(EXTRACT(EPOCH FROM (c.timestamp - k.timestamp))) <= 60\n  WHERE k.exchange_name = 'kraken' \n    AND c.exchange_name = 'coinmate'\n    AND k.timestamp >= NOW() - INTERVAL '24 hours'\n)\nSELECT \n  timestamp,\n  CASE \n    WHEN spread_pct < 0 THEN 'coinmate' \n    ELSE 'kraken'\n  END as buy_exchange,\n  CASE \n    WHEN spread_pct < 0 THEN 'kraken'\n    ELSE 'coinmate' \n  END as sell_exchange,\n  CASE \n    WHEN spread_pct < 0 THEN coinmate_price\n    ELSE kraken_price\n  END as buy_price,\n  CASE \n    WHEN spread_pct < 0 THEN kraken_price\n    ELSE coinmate_price\n  END as sell_price,\n  spread_usd as profit_usd,\n  ABS(spread_pct) as profit_percentage\nFROM price_comparison\nWHERE ABS(spread_pct) > 1.5\nORDER BY timestamp DESC\nLIMIT 50",
+          "rawSql": "WITH kraken_prices AS (\n  SELECT timestamp, price_usd as kraken_price\n  FROM exchange_prices \n  WHERE exchange_name = 'kraken' AND timestamp >= NOW() - INTERVAL '24 hours'\n),\ncoinmate_prices AS (\n  SELECT timestamp, price_usd as coinmate_price\n  FROM exchange_prices \n  WHERE exchange_name = 'coinmate' AND timestamp >= NOW() - INTERVAL '24 hours'\n),\nprice_comparison AS (\n  SELECT DISTINCT ON (k.timestamp)\n    k.timestamp,\n    k.kraken_price,\n    c.coinmate_price,\n    ((c.coinmate_price - k.kraken_price) / k.kraken_price) * 100 as spread_pct,\n    ABS(c.coinmate_price - k.kraken_price) as spread_usd\n  FROM kraken_prices k\n  JOIN coinmate_prices c ON \n    c.timestamp BETWEEN k.timestamp - INTERVAL '60 seconds' AND k.timestamp + INTERVAL '60 seconds'\n  ORDER BY k.timestamp, ABS(EXTRACT(EPOCH FROM (c.timestamp - k.timestamp)))\n)\nSELECT \n  timestamp,\n  CASE \n    WHEN spread_pct < 0 THEN 'coinmate' \n    ELSE 'kraken'\n  END as buy_exchange,\n  CASE \n    WHEN spread_pct < 0 THEN 'kraken'\n    ELSE 'coinmate' \n  END as sell_exchange,\n  CASE \n    WHEN spread_pct < 0 THEN coinmate_price\n    ELSE kraken_price\n  END as buy_price,\n  CASE \n    WHEN spread_pct < 0 THEN kraken_price\n    ELSE coinmate_price\n  END as sell_price,\n  spread_usd as profit_usd,\n  ABS(spread_pct) as profit_percentage\nFROM price_comparison\nWHERE ABS(spread_pct) > 0.01\nORDER BY timestamp DESC\nLIMIT 100",
           "refId": "A",
           "select": [
             [
@@ -1108,4 +1109,4 @@
   "uid": "bitcoin-arbitrage",
   "version": 2,
   "weekStart": ""
-}
+},"overwrite":true}
