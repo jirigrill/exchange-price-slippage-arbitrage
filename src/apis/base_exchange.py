@@ -172,11 +172,11 @@ def create_exchange_api(exchange_name: str, **kwargs) -> BaseExchangeAPI:
         ValueError: If exchange_name is not supported
     """
     if exchange_name.lower() == "kraken":
-        from .kraken_api import KrakenAPI
+        from .kraken.api import KrakenAPI
 
         return KrakenAPI(kwargs.get("api_key"), kwargs.get("api_secret"))
     elif exchange_name.lower() == "coinmate":
-        from .coinmate_api import CoinmateAPI
+        from .coinmate.api import CoinmateAPI
 
         return CoinmateAPI(
             kwargs.get("api_key"), kwargs.get("api_secret"), kwargs.get("client_id")

@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from aioresponses import aioresponses
 
-from src.apis.kraken_api import KrakenAPI, get_kraken_btc_usd_price
+from src.apis.kraken.api import KrakenAPI, get_kraken_btc_usd_price
 
 
 @pytest.mark.unit

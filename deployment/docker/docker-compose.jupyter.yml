@@ -25,13 +25,13 @@ services:
       
     volumes:
       # Mount notebooks directory for persistence
-      - ./notebooks:/home/jovyan/work/notebooks
-      - ./data:/home/jovyan/work/data
+      - ../../analytics/notebooks:/home/jovyan/work/notebooks
+      - ../../data:/home/jovyan/work/data
       # Mount source code for analysis
-      - ./src:/home/jovyan/work/src:ro
-      - ./config:/home/jovyan/work/config:ro
+      - ../../src:/home/jovyan/work/src:ro
+      - ../../config:/home/jovyan/work/config:ro
       # Mount requirements for additional packages
-      - ./jupyter-requirements.txt:/home/jovyan/work/requirements.txt:ro
+      - ../../analytics/requirements.txt:/home/jovyan/work/requirements.txt:ro
       
     working_dir: /home/jovyan/work
     

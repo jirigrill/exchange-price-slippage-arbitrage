@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from aioresponses import aioresponses
 
-from src.apis.coinmate_api import CoinmateAPI, get_coinmate_btc_czk_price
+from src.apis.coinmate.api import CoinmateAPI, get_coinmate_btc_czk_price
 
 
 @pytest.mark.unit

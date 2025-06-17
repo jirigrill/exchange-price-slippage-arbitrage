@@ -13,7 +13,7 @@ services:
       - "${DATABASE_PORT:-5433}:5432"
     volumes:
       - timescale_data:/var/lib/postgresql/data
-      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ../../database/schemas/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - arbitrage-net
     healthcheck:
@@ -29,7 +29,7 @@ services:
         max-file: "3"
 
   arbitrage-monitor:
-    build: .
+    build: ../..
     container_name: arbitrage-monitor
     restart: unless-stopped
     depends_on:
@@ -67,8 +67,8 @@ services:
       # Development settings
       - SANDBOX_MODE=${SANDBOX_MODE:-false}
     volumes:
-      - ./logs:/app/logs
-      - ./.env:/app/.env:ro
+      - ../../logs:/app/logs
+      - ../../.env:/app/.env:ro
     networks:
       - arbitrage-net
     healthcheck:

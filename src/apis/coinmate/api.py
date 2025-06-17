@@ -5,8 +5,8 @@ from typing import Dict, Optional
 
 import aiohttp
 
-from ..utils.logging import log_with_timestamp
-from .base_exchange import BaseExchangeAPI
+from ...utils.logging import log_with_timestamp
+from ..base_exchange import BaseExchangeAPI
 
 
 class CoinmateAPI(BaseExchangeAPI):

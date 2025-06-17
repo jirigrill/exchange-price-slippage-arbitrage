@@ -101,13 +101,13 @@ telegram-test:
 
 # Docker commands
 docker-build:
-	docker build -t bitcoin-arbitrage .
+	cd deployment/docker && docker build -t bitcoin-arbitrage .
 
 docker-run:
-	docker-compose up -d
+	cd deployment/docker && docker-compose up -d
 
 docker-deploy:
-	./deploy.sh
+	./deployment/scripts/deploy.sh
 
 # Quality checks (run before committing)
 check: fix lint test-unit
@@ -122,24 +122,24 @@ ci: install fix lint test
 
 # Database commands
 db-up:
-	docker-compose up -d timescaledb
+	cd deployment/docker && docker-compose up -d timescaledb
 	@echo "⏳ Waiting for database to be ready..."
 	@sleep 10
 	@DATABASE_PORT=$$(uv run python -c "from config.settings import DATABASE_PORT; print(DATABASE_PORT)") && \
 	echo "✅ TimescaleDB is running on port $$DATABASE_PORT"
 
 db-down:
-	docker-compose down timescaledb
+	cd deployment/docker && docker-compose down timescaledb
 
 db-logs:
-	docker-compose logs -f timescaledb
+	cd deployment/docker && docker-compose logs -f timescaledb
 
 db-reset:
 	@echo "⚠️  This will delete all database data! Press Ctrl+C to cancel..."
 	@sleep 5
-	docker-compose down timescaledb
+	cd deployment/docker && docker-compose down timescaledb
 	docker volume rm exchange-price-slippage-arbitrage_timescale_data 2>/dev/null || true
-	docker-compose up -d timescaledb
+	cd deployment/docker && docker-compose up -d timescaledb
 	@echo "🔄 Database reset complete"
 
 db-test: db-up
@@ -167,7 +167,7 @@ grafana-up: db-ensure
 	@GRAFANA_ENABLED=$$(uv run python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('GRAFANA_ENABLED', 'true').lower())") && \
 	if [ "$$GRAFANA_ENABLED" = "true" ]; then \
 		echo "📊 Starting Grafana dashboard..."; \
-		docker-compose -f docker-compose.yml -f docker-compose.grafana.yml up -d grafana; \
+		cd deployment/docker && docker-compose -f docker-compose.yml -f docker-compose.grafana.yml up -d grafana; \
 		GRAFANA_PORT=$$(uv run python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('GRAFANA_PORT', '3000'))") && \
 		echo "✅ Grafana available at http://localhost:$$GRAFANA_PORT"; \
 		echo "💡 Default login: admin / (check GRAFANA_ADMIN_PASSWORD in .env)"; \
@@ -176,27 +176,27 @@ grafana-up: db-ensure
 	fi
 
 grafana-down:
-	docker-compose -f docker-compose.yml -f docker-compose.grafana.yml down grafana
+	cd deployment/docker && docker-compose -f docker-compose.yml -f docker-compose.grafana.yml down grafana
 
 grafana-logs:
-	docker-compose -f docker-compose.yml -f docker-compose.grafana.yml logs -f grafana
+	cd deployment/docker && docker-compose -f docker-compose.yml -f docker-compose.grafana.yml logs -f grafana
 
 # Jupyter notebook commands
 jupyter-up:
 	@echo "🚀 Starting Jupyter notebook server..."
-	docker-compose -f docker-compose.jupyter.yml up -d
+	cd deployment/docker && docker-compose -f docker-compose.jupyter.yml up -d
 	@echo "📊 Jupyter server starting..."
 	@sleep 5
 	@echo "🔗 Jupyter will be available at: http://localhost:8888"
 	@echo "🔑 Access token: $(shell grep JUPYTER_TOKEN .env | cut -d'=' -f2)"
-	@echo "📁 Notebooks directory: ./notebooks"
+	@echo "📁 Notebooks directory: ./analytics/notebooks"
 	@echo "📈 Database connection configured automatically"
 
 jupyter-down:
-	docker-compose -f docker-compose.jupyter.yml down
+	cd deployment/docker && docker-compose -f docker-compose.jupyter.yml down
 
 jupyter-logs:
-	docker-compose -f docker-compose.jupyter.yml logs -f jupyter
+	cd deployment/docker && docker-compose -f docker-compose.jupyter.yml logs -f jupyter
 
 jupyter-restart:
 	make jupyter-down

@@ -20,8 +20,8 @@ services:
       - DATABASE_PASSWORD=${DATABASE_PASSWORD:-arbitrage_pass}
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ../../monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ../../monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     networks:
       - arbitrage-net
     depends_on:

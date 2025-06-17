@@ -9,8 +9,8 @@ import aiohttp
 
 from config.settings import KRAKEN_TRADING_FEE
 
-from ..utils.logging import log_with_timestamp
-from .base_exchange import BaseExchangeAPI
+from ...utils.logging import log_with_timestamp
+from ..base_exchange import BaseExchangeAPI
 
 
 class KrakenAPI(BaseExchangeAPI):
