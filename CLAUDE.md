@@ -31,6 +31,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build Docker image**: `make docker-build`
 - **Run with Docker Compose**: `make docker-run` or `docker-compose up -d`
 - **Deploy with production settings**: `make docker-deploy` or `./deploy.sh`
+- **Start Grafana monitoring**: `docker-compose -f docker-compose.grafana.yml up -d`
+- **Start Jupyter notebooks**: `docker-compose -f docker-compose.jupyter.yml up -d`
 
 ### Database Operations (Optional)
 - **Auto-start database**: `make run` (automatically starts TimescaleDB if enabled and not running)
@@ -42,6 +44,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Connect with timezone**: `make db-connect` (connects with your local timezone automatically)
 - **Set default timezone**: `make db-timezone` (sets database timezone from TIMEZONE environment variable)
 - **Run without database**: `DATABASE_ENABLED=false make run` (disables all database operations)
+
+### Monitoring & Analytics (Optional)
+- **Start Grafana dashboards**: `docker-compose -f docker-compose.grafana.yml up -d` (access at http://localhost:3000)
+- **Start Jupyter notebooks**: `docker-compose -f docker-compose.jupyter.yml up -d` (access at http://localhost:8888)
+- **View Grafana dashboards**: `open http://localhost:3000` (admin/admin)
+- **Access Jupyter notebooks**: `open http://localhost:8888`
+- **Grafana datasource config**: Edit `grafana/datasources/timescaledb.yml`
+- **Grafana dashboard config**: Edit `grafana/dashboards/bitcoin-arbitrage.json`
+- **Jupyter dependencies**: `jupyter-requirements.txt` contains notebook-specific packages
 
 ## Architecture Overview
 
@@ -64,6 +75,11 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 - `currency_converter.py` - Converts CZK to USD using live exchange rates
 - `telegram_service.py` - Sends alerts when profitable opportunities are detected
 - `database_service.py` - Stores price data and arbitrage opportunities in TimescaleDB
+
+**Monitoring & Analytics** (Optional):
+- `grafana/` - Grafana dashboards and datasource configurations for real-time monitoring
+- `notebooks/` - Jupyter notebooks for historical data analysis and backtesting
+- `coinmate_signature.py` - Utility for Coinmate API signature generation
 
 **Configuration** (`config/settings.py`):
 - Exchange definitions: `LARGE_EXCHANGES` (Kraken), `SMALL_EXCHANGES` (Coinmate)
@@ -93,6 +109,9 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 - **Profit-based filtering**: Only opportunities above configurable thresholds are reported
 - **TimescaleDB integration**: Historical price and arbitrage data stored in time-series database
 - **Non-blocking storage**: Database operations don't impact real-time monitoring performance
+- **Visual monitoring**: Optional Grafana dashboards for real-time data visualization
+- **Data analysis**: Jupyter notebooks for advanced analytics and backtesting
+- **Containerized deployment**: Multiple Docker Compose configurations for different use cases
 
 ### Environment Configuration
 
@@ -115,8 +134,15 @@ The system requires minimal configuration and works without API keys for basic m
 
 ### Testing Strategy
 
-- **Unit tests** (`tests/unit/`) - Mock external APIs, test individual components
+- **Unit tests** (`tests/unit/`) - Mock external APIs, test individual components including:
+  - `test_base_exchange.py` - Tests for abstract base class interface
+  - `test_database_service.py` - Database service tests
+  - `test_coinmate_api.py`, `test_kraken_api.py` - Exchange API tests
+  - `test_arbitrage_detector.py`, `test_currency_converter.py` - Core logic tests
+  - `test_telegram_service.py` - Notification service tests
 - **Integration tests** (`tests/integration/`) - Test real API interactions
+  - `test_database_integration.py` - Database integration tests
+  - `test_telegram.py` - Telegram API integration tests
 - **Database integration tests** - Test TimescaleDB operations with real database (via `make db-test`)
 - **Test markers**: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.slow`
 - **100+ total tests** covering all major components and error scenarios
@@ -411,3 +437,121 @@ make db-timezone
 # Manual timezone setting (in psql session)
 SET timezone = 'Your/Timezone';
 ```
+
+## Monitoring & Analytics Features
+
+This section covers the optional monitoring and analytics components that enhance the core arbitrage monitoring system.
+
+### Grafana Dashboards
+
+**Location**: `grafana/` directory
+**Purpose**: Real-time visualization of arbitrage opportunities and system metrics
+
+#### Key Files:
+- `grafana/dashboards/bitcoin-arbitrage.json` - Main Bitcoin arbitrage monitoring dashboard
+- `grafana/dashboards/dashboard.yml` - Dashboard provisioning configuration
+- `grafana/datasources/timescaledb.yml` - TimescaleDB datasource configuration
+
+#### Dashboard Features:
+- Real-time price differences between exchanges
+- Historical arbitrage opportunity tracking
+- Exchange API response times and health monitoring
+- Profit potential analysis and trends
+- Alert threshold visualization
+
+#### Usage:
+```bash
+# Start Grafana with TimescaleDB
+docker-compose -f docker-compose.grafana.yml up -d
+
+# Access dashboard at http://localhost:3000
+# Default credentials: admin/admin
+```
+
+### Jupyter Notebooks
+
+**Location**: `notebooks/` directory
+**Purpose**: Advanced data analysis, backtesting, and research
+
+#### Key Files:
+- `notebooks/arbitrage_analysis.ipynb` - Comprehensive market analysis notebook
+- `jupyter-requirements.txt` - Jupyter-specific dependencies (numpy, pandas, matplotlib, etc.)
+
+#### Analysis Capabilities:
+- Historical arbitrage opportunity analysis
+- Price spread trends and statistical analysis
+- Exchange performance comparison
+- Profit potential modeling and backtesting
+- Market volatility analysis
+- Custom data visualization
+
+#### Usage:
+```bash
+# Start Jupyter notebook server
+docker-compose -f docker-compose.jupyter.yml up -d
+
+# Access notebooks at http://localhost:8888
+# No password required (development setup)
+```
+
+### Additional Utilities
+
+#### Coinmate Signature Utility
+**File**: `coinmate_signature.py`
+**Purpose**: Handles Coinmate API authentication signature generation
+**Note**: This is a standalone utility file that supports the Coinmate API integration
+
+### Docker Compose Configurations
+
+The project includes multiple Docker Compose files for different deployment scenarios:
+
+1. **`docker-compose.yml`** - Basic application + TimescaleDB
+2. **`docker-compose.grafana.yml`** - Full monitoring stack (app + database + Grafana)
+3. **`docker-compose.jupyter.yml`** - Analytics setup (app + database + Jupyter)
+
+#### Example Usage Scenarios:
+
+```bash
+# Scenario 1: Basic monitoring only
+docker-compose up -d
+
+# Scenario 2: Full monitoring with Grafana dashboards
+docker-compose -f docker-compose.grafana.yml up -d
+
+# Scenario 3: Research and analysis with Jupyter
+docker-compose -f docker-compose.jupyter.yml up -d
+
+# Scenario 4: Everything (run multiple compose files)
+docker-compose up -d
+docker-compose -f docker-compose.grafana.yml up grafana -d
+docker-compose -f docker-compose.jupyter.yml up jupyter -d
+```
+
+### Integration with Core System
+
+Both monitoring features integrate seamlessly with the core arbitrage monitoring system:
+
+- **Data Source**: Both Grafana and Jupyter use the same TimescaleDB database
+- **Real-time Updates**: Grafana dashboards update automatically as new data arrives
+- **Historical Analysis**: Jupyter notebooks can analyze any time period stored in the database
+- **Optional Components**: Both can be disabled without affecting core functionality
+- **Independent Operation**: Can run separately or together based on needs
+
+### Development and Customization
+
+#### Grafana Customization:
+- Edit dashboard JSON files in `grafana/dashboards/`
+- Modify datasource settings in `grafana/datasources/`
+- Add new dashboards by creating additional JSON files
+
+#### Jupyter Customization:
+- Add new analysis notebooks to `notebooks/` directory
+- Install additional Python packages in `jupyter-requirements.txt`
+- Create custom analysis scripts and visualizations
+
+### Performance Considerations
+
+- **Grafana**: Minimal impact on system performance, queries database efficiently
+- **Jupyter**: Resource usage depends on analysis complexity, runs independently
+- **Database**: Both tools use read-only queries, no impact on data collection
+- **Docker Resources**: Each service can be resource-limited via Docker Compose configuration

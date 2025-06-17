@@ -1,4 +1,4 @@
-.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone grafana-up grafana-down grafana-logs
+.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone grafana-up grafana-down grafana-logs jupyter-up jupyter-down jupyter-logs jupyter-restart
 
 # Default target
 help:
@@ -39,6 +39,10 @@ help:
 	@echo "  grafana-up       Start Grafana dashboard for data analysis"
 	@echo "  grafana-down     Stop Grafana"
 	@echo "  grafana-logs     View Grafana logs"
+	@echo "  jupyter-up       Start Jupyter notebook server for hypothesis testing"
+	@echo "  jupyter-down     Stop Jupyter server"
+	@echo "  jupyter-logs     View Jupyter logs"
+	@echo "  jupyter-restart  Restart Jupyter server"
 	@echo ""
 	@echo "Example: make install && make test-unit && make run"
 
@@ -176,3 +180,24 @@ grafana-down:
 
 grafana-logs:
 	docker-compose -f docker-compose.yml -f docker-compose.grafana.yml logs -f grafana
+
+# Jupyter notebook commands
+jupyter-up:
+	@echo "🚀 Starting Jupyter notebook server..."
+	docker-compose -f docker-compose.jupyter.yml up -d
+	@echo "📊 Jupyter server starting..."
+	@sleep 5
+	@echo "🔗 Jupyter will be available at: http://localhost:8888"
+	@echo "🔑 Access token: $(shell grep JUPYTER_TOKEN .env | cut -d'=' -f2)"
+	@echo "📁 Notebooks directory: ./notebooks"
+	@echo "📈 Database connection configured automatically"
+
+jupyter-down:
+	docker-compose -f docker-compose.jupyter.yml down
+
+jupyter-logs:
+	docker-compose -f docker-compose.jupyter.yml logs -f jupyter
+
+jupyter-restart:
+	make jupyter-down
+	make jupyter-up

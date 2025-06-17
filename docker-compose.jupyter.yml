@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  jupyter:
+    image: jupyter/scipy-notebook:latest
+    container_name: arbitrage-jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      # Jupyter configuration
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN:-arbitrage_analysis_token}
+      - RESTARTABLE=yes
+      
+      # Database connection for analysis
+      - DATABASE_URL=${DATABASE_URL:-postgresql://arbitrage_user:arbitrage_pass@timescaledb:5432/arbitrage}
+      - DATABASE_HOST=${DATABASE_HOST:-timescaledb}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_NAME=${DATABASE_NAME:-arbitrage}
+      - DATABASE_USER=${DATABASE_USER:-arbitrage_user}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-arbitrage_pass}
+      
+      # Timezone for analysis
+      - TZ=${TIMEZONE:-Europe/Prague}
+      
+    volumes:
+      # Mount notebooks directory for persistence
+      - ./notebooks:/home/jovyan/work/notebooks
+      - ./data:/home/jovyan/work/data
+      # Mount source code for analysis
+      - ./src:/home/jovyan/work/src:ro
+      - ./config:/home/jovyan/work/config:ro
+      # Mount requirements for additional packages
+      - ./jupyter-requirements.txt:/home/jovyan/work/requirements.txt:ro
+      
+    working_dir: /home/jovyan/work
+    
+    # Install additional packages on startup
+    command: >
+      bash -c "
+      pip install -r requirements.txt 2>/dev/null || echo 'No requirements.txt found, skipping package installation';
+      start-notebook.sh --NotebookApp.token='${JUPYTER_TOKEN:-arbitrage_analysis_token}' --NotebookApp.password='' --NotebookApp.allow_root=True --NotebookApp.ip='0.0.0.0' --NotebookApp.port=8888 --NotebookApp.notebook_dir='/home/jovyan/work' --NotebookApp.allow_origin='*' --NotebookApp.disable_check_xsrf=True
+      "
+    
+    restart: unless-stopped
+    
+    # Connect to existing TimescaleDB network if available
+    networks:
+      - arbitrage-net
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  arbitrage-net:
+    name: exchange-price-slippage-arbitrage_arbitrage-net
+    external: true

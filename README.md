@@ -346,6 +346,75 @@ GROUP BY exchange_name;
 
 Set `DATABASE_ENABLED=false` in `.env` or environment variable to run lightweight monitoring without any database dependencies.
 
+## 📊 Grafana Monitoring (Optional)
+
+The system includes optional Grafana integration for visual monitoring and analytics dashboards.
+
+### Features
+
+- **Real-time dashboards**: Live Bitcoin arbitrage monitoring
+- **Historical analysis**: Price trends and opportunity tracking
+- **Exchange performance**: API response times and health monitoring
+- **Profit analytics**: Opportunity frequency and profitability metrics
+
+### Quick Start
+
+```bash
+# Start full monitoring stack (TimescaleDB + Grafana)
+docker-compose -f docker-compose.grafana.yml up -d
+
+# Access Grafana dashboard
+open http://localhost:3000
+# Default login: admin/admin
+```
+
+### Dashboard Features
+
+The included Bitcoin Arbitrage dashboard provides:
+- Real-time price differences between exchanges
+- Historical arbitrage opportunities
+- Exchange health and response times
+- Profit potential analysis
+
+### Configuration
+
+```bash
+# Configure Grafana datasource
+# Edit grafana/datasources/timescaledb.yml with your database settings
+
+# Customize dashboards
+# Edit grafana/dashboards/bitcoin-arbitrage.json
+```
+
+## 📓 Jupyter Notebooks (Optional)
+
+Data analysis notebooks are included for deeper market analysis and backtesting.
+
+### Setup
+
+```bash
+# Start Jupyter notebook server
+docker-compose -f docker-compose.jupyter.yml up -d
+
+# Access Jupyter
+open http://localhost:8888
+```
+
+### Available Notebooks
+
+1. **arbitrage_analysis.ipynb**: Comprehensive market analysis
+   - Historical arbitrage opportunity analysis
+   - Price spread trends and patterns
+   - Exchange performance comparison
+   - Profit potential modeling
+
+### Analysis Features
+
+- Historical data visualization
+- Statistical analysis of arbitrage opportunities
+- Market trend identification
+- Exchange comparison metrics
+
 ## Project Structure
 
 ### Current Structure
@@ -383,23 +452,36 @@ exchange-price-slippage-arbitrage/
 │   ├── test_runner.py                # Test runner script
 │   ├── unit/                         # Unit tests
 │   │   ├── test_arbitrage_detector.py
+│   │   ├── test_base_exchange.py        # Tests for base exchange class
 │   │   ├── test_coinmate_api.py
 │   │   ├── test_currency_converter.py
+│   │   ├── test_database_service.py     # Database service tests
 │   │   ├── test_kraken_api.py
 │   │   └── test_telegram_service.py
 │   └── integration/                  # Integration tests
 │       ├── test_database_integration.py  # Database tests
 │       └── test_telegram.py             # Telegram API tests
-├── docs/                          # Documentation
-│   └── DEPLOYMENT.md                 # Deployment guide
+├── grafana/                       # Grafana monitoring setup
+│   ├── dashboards/
+│   │   ├── bitcoin-arbitrage.json       # Bitcoin arbitrage dashboard
+│   │   └── dashboard.yml                # Dashboard configuration
+│   └── datasources/
+│       └── timescaledb.yml              # TimescaleDB datasource config
+├── notebooks/                     # Jupyter notebooks for analysis
+│   └── arbitrage_analysis.ipynb         # Data analysis notebook
 ├── monitoring/                    # Monitoring and logging
 │   └── logrotate.conf                # Log rotation configuration
+├── data/                          # Data directory (created at runtime)
 ├── logs/                          # Application logs (created at runtime)
+├── coinmate_signature.py          # Coinmate API signature utility
 ├── .env.example                   # Environment variables template
 ├── CLAUDE.md                      # AI assistant instructions
 ├── Dockerfile                     # Docker container definition
 ├── docker-compose.yml             # Docker Compose + TimescaleDB
+├── docker-compose.grafana.yml     # Grafana monitoring stack
+├── docker-compose.jupyter.yml     # Jupyter notebook setup
 ├── deploy.sh                      # Simple deployment script
+├── jupyter-requirements.txt       # Jupyter notebook dependencies
 ├── Makefile                       # Development commands
 ├── main.py                        # Main application entry point
 ├── pyproject.toml                 # UV project configuration
@@ -411,9 +493,10 @@ exchange-price-slippage-arbitrage/
 - **Clear separation of concerns**: APIs, core logic, and utilities are isolated  
 - **Polymorphic design**: Abstract base class allows easy exchange expansion
 - **Database integration**: Optional TimescaleDB with full schema management
+- **Monitoring & Analytics**: Grafana dashboards and Jupyter notebooks for analysis
 - **Scalability**: Easy to add new exchanges via BaseExchangeAPI interface
 - **Maintainability**: Related files grouped together
-- **Testing organization**: Tests mirror source structure with database tests
+- **Testing organization**: Tests mirror source structure with comprehensive coverage
 - **Configuration management**: All config in dedicated directory
 - **Documentation**: Comprehensive docs with SQL examples and AI instructions
 
