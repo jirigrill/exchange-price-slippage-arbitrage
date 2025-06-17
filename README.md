@@ -361,7 +361,7 @@ The system includes optional Grafana integration for visual monitoring and analy
 
 ```bash
 # Start full monitoring stack (TimescaleDB + Grafana)
-docker-compose -f docker-compose.grafana.yml up -d
+cd deployment/docker && docker-compose -f docker-compose.yml -f docker-compose.grafana.yml up -d
 
 # Access Grafana dashboard
 open http://localhost:3000
@@ -380,10 +380,10 @@ The included Bitcoin Arbitrage dashboard provides:
 
 ```bash
 # Configure Grafana datasource
-# Edit grafana/datasources/timescaledb.yml with your database settings
+# Edit monitoring/grafana/datasources/timescaledb.yml with your database settings
 
 # Customize dashboards
-# Edit grafana/dashboards/bitcoin-arbitrage.json
+# Edit monitoring/grafana/dashboards/bitcoin-arbitrage.json
 ```
 
 ## 📓 Jupyter Notebooks (Optional)
@@ -394,7 +394,7 @@ Data analysis notebooks are included for deeper market analysis and backtesting.
 
 ```bash
 # Start Jupyter notebook server
-docker-compose -f docker-compose.jupyter.yml up -d
+cd deployment/docker && docker-compose -f docker-compose.jupyter.yml up -d
 
 # Access Jupyter
 open http://localhost:8888
@@ -402,7 +402,7 @@ open http://localhost:8888
 
 ### Available Notebooks
 
-1. **arbitrage_analysis.ipynb**: Comprehensive market analysis
+1. **analytics/notebooks/arbitrage_analysis.ipynb**: Comprehensive market analysis
    - Historical arbitrage opportunity analysis
    - Price spread trends and patterns
    - Exchange performance comparison
@@ -426,8 +426,13 @@ exchange-price-slippage-arbitrage/
 │   ├── apis/                      # External API integrations
 │   │   ├── __init__.py
 │   │   ├── base_exchange.py          # Abstract base class for exchanges
-│   │   ├── coinmate_api.py           # Coinmate API implementation
-│   │   └── kraken_api.py             # Kraken API implementation
+│   │   ├── coinmate/                 # Coinmate exchange integration
+│   │   │   ├── __init__.py
+│   │   │   ├── api.py                # Coinmate API implementation
+│   │   │   └── signature.py          # Coinmate API signature utility
+│   │   └── kraken/                   # Kraken exchange integration
+│   │       ├── __init__.py
+│   │       └── api.py                # Kraken API implementation
 │   ├── core/                      # Core business logic
 │   │   ├── __init__.py
 │   │   ├── arbitrage_detector.py     # Arbitrage opportunity detection
@@ -444,8 +449,17 @@ exchange-price-slippage-arbitrage/
 ├── config/                        # Configuration files
 │   ├── __init__.py
 │   └── settings.py                   # Configuration settings
-├── sql/                           # Database schema and migrations
-│   └── init.sql                      # TimescaleDB initialization
+├── database/                      # Database schema and migrations
+│   └── schemas/
+│       └── init.sql                  # TimescaleDB initialization
+├── deployment/                    # Deployment configurations
+│   ├── docker/                       # Docker configurations
+│   │   ├── docker-compose.yml        # Core services (app + TimescaleDB)
+│   │   ├── docker-compose.grafana.yml # Grafana monitoring stack
+│   │   ├── docker-compose.jupyter.yml # Jupyter analytics stack
+│   │   └── Dockerfile                # Application container
+│   └── scripts/
+│       └── deploy.sh                 # Enhanced deployment script
 ├── tests/                         # Comprehensive test suite (100+ tests)
 │   ├── __init__.py
 │   ├── conftest.py                   # Shared test fixtures
@@ -461,26 +475,20 @@ exchange-price-slippage-arbitrage/
 │   └── integration/                  # Integration tests
 │       ├── test_database_integration.py  # Database tests
 │       └── test_telegram.py             # Telegram API tests
-├── grafana/                       # Grafana monitoring setup
-│   ├── dashboards/
-│   │   ├── bitcoin-arbitrage.json       # Bitcoin arbitrage dashboard
-│   │   └── dashboard.yml                # Dashboard configuration
-│   └── datasources/
-│       └── timescaledb.yml              # TimescaleDB datasource config
-├── notebooks/                     # Jupyter notebooks for analysis
-│   └── arbitrage_analysis.ipynb         # Data analysis notebook
-├── monitoring/                    # Monitoring and logging
-│   └── logrotate.conf                # Log rotation configuration
+├── monitoring/                    # Monitoring and dashboards
+│   └── grafana/                      # Grafana configuration
+│       ├── dashboards/
+│       │   ├── bitcoin-arbitrage.json   # Bitcoin arbitrage dashboard
+│       │   └── dashboard.yml            # Dashboard configuration
+│       └── datasources/
+│           └── timescaledb.yml          # TimescaleDB datasource config
+├── analytics/                     # Data analysis and research
+│   └── notebooks/                    # Jupyter notebooks for analysis
+│       └── arbitrage_analysis.ipynb     # Data analysis notebook
 ├── data/                          # Data directory (created at runtime)
 ├── logs/                          # Application logs (created at runtime)
-├── coinmate_signature.py          # Coinmate API signature utility
 ├── .env.example                   # Environment variables template
 ├── CLAUDE.md                      # AI assistant instructions
-├── Dockerfile                     # Docker container definition
-├── docker-compose.yml             # Docker Compose + TimescaleDB
-├── docker-compose.grafana.yml     # Grafana monitoring stack
-├── docker-compose.jupyter.yml     # Jupyter notebook setup
-├── deploy.sh                      # Simple deployment script
 ├── jupyter-requirements.txt       # Jupyter notebook dependencies
 ├── Makefile                       # Development commands
 ├── main.py                        # Main application entry point
@@ -533,7 +541,7 @@ For continuous monitoring on your homeserver, deploy with Docker:
 make docker-deploy
 
 # Or directly
-./deploy.sh
+./deployment/scripts/deploy.sh
 ```
 
 The deployment script will:

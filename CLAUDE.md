@@ -67,8 +67,9 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 
 **Exchange Integration** (`src/apis/`):
 - `base_exchange.py` - Abstract base class defining the exchange API interface
-- `kraken_api.py` - Handles BTC/USD price fetching from Kraken (inherits from BaseExchangeAPI)
-- `coinmate_api.py` - Handles BTC/CZK price fetching from Coinmate (inherits from BaseExchangeAPI)
+- `kraken/api.py` - Handles BTC/USD price fetching from Kraken (inherits from BaseExchangeAPI)
+- `coinmate/api.py` - Handles BTC/CZK price fetching from Coinmate (inherits from BaseExchangeAPI)
+- `coinmate/signature.py` - Coinmate API authentication utility
 
 **Business Logic** (`src/core/`):
 - `exchange_monitor.py` - Manages real-time price monitoring across exchanges, handles currency conversion
@@ -80,9 +81,8 @@ This is a Bitcoin arbitrage monitoring system that detects price differences bet
 - `database_service.py` - Stores price data and arbitrage opportunities in TimescaleDB
 
 **Monitoring & Analytics** (Optional):
-- `grafana/` - Grafana dashboards and datasource configurations for real-time monitoring
-- `notebooks/` - Jupyter notebooks for historical data analysis and backtesting
-- `coinmate_signature.py` - Utility for Coinmate API signature generation
+- `monitoring/grafana/` - Grafana dashboards and datasource configurations for real-time monitoring
+- `analytics/notebooks/` - Jupyter notebooks for historical data analysis and backtesting
 
 **Configuration** (`config/settings.py`):
 - Exchange definitions: `LARGE_EXCHANGES` (Kraken), `SMALL_EXCHANGES` (Coinmate)
@@ -447,13 +447,13 @@ This section covers the optional monitoring and analytics components that enhanc
 
 ### Grafana Dashboards
 
-**Location**: `grafana/` directory
+**Location**: `monitoring/grafana/` directory
 **Purpose**: Real-time visualization of arbitrage opportunities and system metrics
 
 #### Key Files:
-- `grafana/dashboards/bitcoin-arbitrage.json` - Main Bitcoin arbitrage monitoring dashboard
-- `grafana/dashboards/dashboard.yml` - Dashboard provisioning configuration
-- `grafana/datasources/timescaledb.yml` - TimescaleDB datasource configuration
+- `monitoring/grafana/dashboards/bitcoin-arbitrage.json` - Main Bitcoin arbitrage monitoring dashboard
+- `monitoring/grafana/dashboards/dashboard.yml` - Dashboard provisioning configuration
+- `monitoring/grafana/datasources/timescaledb.yml` - TimescaleDB datasource configuration
 
 #### Dashboard Features:
 - Real-time price differences between exchanges
@@ -465,7 +465,7 @@ This section covers the optional monitoring and analytics components that enhanc
 #### Usage:
 ```bash
 # Start Grafana with TimescaleDB
-docker-compose -f docker-compose.grafana.yml up -d
+cd deployment/docker && docker-compose -f docker-compose.yml -f docker-compose.grafana.yml up -d
 
 # Access dashboard at http://localhost:3000
 # Default credentials: admin/admin
@@ -473,11 +473,11 @@ docker-compose -f docker-compose.grafana.yml up -d
 
 ### Jupyter Notebooks
 
-**Location**: `notebooks/` directory
+**Location**: `analytics/notebooks/` directory
 **Purpose**: Advanced data analysis, backtesting, and research
 
 #### Key Files:
-- `notebooks/arbitrage_analysis.ipynb` - Comprehensive market analysis notebook
+- `analytics/notebooks/arbitrage_analysis.ipynb` - Comprehensive market analysis notebook
 - `jupyter-requirements.txt` - Jupyter-specific dependencies (numpy, pandas, matplotlib, etc.)
 
 #### Analysis Capabilities:
@@ -491,7 +491,7 @@ docker-compose -f docker-compose.grafana.yml up -d
 #### Usage:
 ```bash
 # Start Jupyter notebook server
-docker-compose -f docker-compose.jupyter.yml up -d
+cd deployment/docker && docker-compose -f docker-compose.jupyter.yml up -d
 
 # Access notebooks at http://localhost:8888
 # No password required (development setup)
@@ -500,34 +500,34 @@ docker-compose -f docker-compose.jupyter.yml up -d
 ### Additional Utilities
 
 #### Coinmate Signature Utility
-**File**: `coinmate_signature.py`
+**File**: `src/apis/coinmate/signature.py`
 **Purpose**: Handles Coinmate API authentication signature generation
-**Note**: This is a standalone utility file that supports the Coinmate API integration
+**Note**: This utility is now integrated within the Coinmate API module structure
 
 ### Docker Compose Configurations
 
 The project includes multiple Docker Compose files for different deployment scenarios:
 
-1. **`docker-compose.yml`** - Basic application + TimescaleDB
-2. **`docker-compose.grafana.yml`** - Full monitoring stack (app + database + Grafana)
-3. **`docker-compose.jupyter.yml`** - Analytics setup (app + database + Jupyter)
+1. **`deployment/docker/docker-compose.yml`** - Basic application + TimescaleDB
+2. **`deployment/docker/docker-compose.grafana.yml`** - Full monitoring stack (app + database + Grafana)
+3. **`deployment/docker/docker-compose.jupyter.yml`** - Analytics setup (app + database + Jupyter)
 
 #### Example Usage Scenarios:
 
 ```bash
 # Scenario 1: Basic monitoring only
-docker-compose up -d
+cd deployment/docker && docker-compose up -d
 
 # Scenario 2: Full monitoring with Grafana dashboards
-docker-compose -f docker-compose.grafana.yml up -d
+cd deployment/docker && docker-compose -f docker-compose.yml -f docker-compose.grafana.yml up -d
 
 # Scenario 3: Research and analysis with Jupyter
-docker-compose -f docker-compose.jupyter.yml up -d
+cd deployment/docker && docker-compose -f docker-compose.jupyter.yml up -d
 
 # Scenario 4: Everything (run multiple compose files)
-docker-compose up -d
-docker-compose -f docker-compose.grafana.yml up grafana -d
-docker-compose -f docker-compose.jupyter.yml up jupyter -d
+cd deployment/docker && docker-compose up -d
+cd deployment/docker && docker-compose -f docker-compose.grafana.yml up grafana -d
+cd deployment/docker && docker-compose -f docker-compose.jupyter.yml up jupyter -d
 ```
 
 ### Integration with Core System
@@ -543,12 +543,12 @@ Both monitoring features integrate seamlessly with the core arbitrage monitoring
 ### Development and Customization
 
 #### Grafana Customization:
-- Edit dashboard JSON files in `grafana/dashboards/`
-- Modify datasource settings in `grafana/datasources/`
+- Edit dashboard JSON files in `monitoring/grafana/dashboards/`
+- Modify datasource settings in `monitoring/grafana/datasources/`
 - Add new dashboards by creating additional JSON files
 
 #### Jupyter Customization:
-- Add new analysis notebooks to `notebooks/` directory
+- Add new analysis notebooks to `analytics/notebooks/` directory
 - Install additional Python packages in `jupyter-requirements.txt`
 - Create custom analysis scripts and visualizations
 
