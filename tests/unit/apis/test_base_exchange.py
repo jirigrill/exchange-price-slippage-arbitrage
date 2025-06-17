@@ -191,8 +191,8 @@ class TestPolymorphism:
 
     async def test_polymorphic_usage(self):
         """Test that different APIs can be used through base interface"""
-        from src.apis.coinmate_api import CoinmateAPI
-        from src.apis.kraken_api import KrakenAPI
+        from src.apis.coinmate.api import CoinmateAPI
+        from src.apis.kraken.api import KrakenAPI
 
         apis = [
             KrakenAPI("key1", "secret1"),
@@ -209,8 +209,8 @@ class TestPolymorphism:
 
     def test_pair_normalization_differences(self):
         """Test that different exchanges normalize pairs differently"""
-        from src.apis.coinmate_api import CoinmateAPI
-        from src.apis.kraken_api import KrakenAPI
+        from src.apis.coinmate.api import CoinmateAPI
+        from src.apis.kraken.api import KrakenAPI
 
         kraken = KrakenAPI()
         coinmate = CoinmateAPI()

@@ -118,7 +118,7 @@ class TestCoinmateAPI:
             assert "BTC_CZK" in result["data"]
 
     @patch("time.time", return_value=1703254800)
-    @patch("src.apis.coinmate_api.CoinmateAPI._generate_signature")
+    @patch("src.apis.coinmate.api.CoinmateAPI._generate_signature")
     async def test_authenticated_request(self, mock_signature, mock_time):
         """Test authenticated request creation"""
         mock_signature.return_value = "TEST_SIGNATURE"

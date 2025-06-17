@@ -201,7 +201,7 @@ class TestKrakenAPI:
             assert "BTCUSD" in result["result"]
 
     @patch("time.time", return_value=1703254800)
-    @patch("src.apis.kraken_api.KrakenAPI._generate_signature")
+    @patch("src.apis.kraken.api.KrakenAPI._generate_signature")
     async def test_authenticated_request(self, mock_signature, mock_time):
         """Test authenticated request creation"""
         mock_signature.return_value = "TEST_SIGNATURE"
