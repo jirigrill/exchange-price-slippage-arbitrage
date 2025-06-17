@@ -30,9 +30,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Docker Deployment
 - **Build Docker image**: `make docker-build`
 - **Run with Docker Compose**: `make docker-run` or `docker-compose up -d`
-- **Deploy with production settings**: `make docker-deploy` or `./deploy.sh`
-- **Start Grafana monitoring**: `docker-compose -f docker-compose.grafana.yml up -d`
-- **Start Jupyter notebooks**: `docker-compose -f docker-compose.jupyter.yml up -d`
+- **Deploy with production settings**: `make docker-deploy` or `./deployment/scripts/deploy.sh`
+- **Enhanced deployment**: `./deployment/scripts/deploy.sh [basic|monitoring|analytics|full]`
+- **Start Grafana monitoring**: `make grafana-up`
+- **Start Jupyter notebooks**: `make jupyter-up`
 
 ### Database Operations (Optional)
 - **Auto-start database**: `make run` (automatically starts TimescaleDB if enabled and not running)
@@ -46,13 +47,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Run without database**: `DATABASE_ENABLED=false make run` (disables all database operations)
 
 ### Monitoring & Analytics (Optional)
-- **Start Grafana dashboards**: `docker-compose -f docker-compose.grafana.yml up -d` (access at http://localhost:3000)
-- **Start Jupyter notebooks**: `docker-compose -f docker-compose.jupyter.yml up -d` (access at http://localhost:8888)
-- **View Grafana dashboards**: `open http://localhost:3000` (admin/admin)
-- **Access Jupyter notebooks**: `open http://localhost:8888`
-- **Grafana datasource config**: Edit `grafana/datasources/timescaledb.yml`
-- **Grafana dashboard config**: Edit `grafana/dashboards/bitcoin-arbitrage.json`
-- **Jupyter dependencies**: `jupyter-requirements.txt` contains notebook-specific packages
+- **Start Grafana dashboards**: `make grafana-up` (access at http://localhost:3000)
+- **Start Jupyter notebooks**: `make jupyter-up` (access at http://localhost:8888)
+- **View all service status**: `make services-status`
+- **View logs from all services**: `make services-logs`
+- **Stop all services**: `make services-stop-all`
+- **Restart all services**: `make services-restart-all`
+- **Grafana datasource config**: Edit `monitoring/grafana/datasources/timescaledb.yml`
+- **Grafana dashboard config**: Edit `monitoring/grafana/dashboards/bitcoin-arbitrage.json`
+- **Jupyter dependencies**: `analytics/requirements.txt` contains notebook-specific packages
 
 ## Architecture Overview
 

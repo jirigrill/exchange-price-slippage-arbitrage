@@ -1,4 +1,4 @@
-.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone grafana-up grafana-down grafana-logs jupyter-up jupyter-down jupyter-logs jupyter-restart
+.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone grafana-up grafana-down grafana-logs jupyter-up jupyter-down jupyter-logs jupyter-restart services-status services-stop-all services-logs services-restart-all
 
 # Default target
 help:
@@ -43,6 +43,12 @@ help:
 	@echo "  jupyter-down     Stop Jupyter server"
 	@echo "  jupyter-logs     View Jupyter logs"
 	@echo "  jupyter-restart  Restart Jupyter server"
+	@echo ""
+	@echo "Service Management:"
+	@echo "  services-status     Show status of all services"
+	@echo "  services-logs       View logs from all running services"
+	@echo "  services-stop-all   Stop all services (core + optional)"
+	@echo "  services-restart-all Restart all running services"
 	@echo ""
 	@echo "Example: make install && make test-unit && make run"
 
@@ -201,3 +207,34 @@ jupyter-logs:
 jupyter-restart:
 	make jupyter-down
 	make jupyter-up
+
+# Service management commands
+services-status:
+	@echo "📊 Core Services Status:"
+	@cd deployment/docker && docker-compose ps || echo "No core services running"
+	@echo ""
+	@echo "📊 Optional Services Status:"
+	@cd deployment/docker && docker-compose -f docker-compose.grafana.yml ps grafana 2>/dev/null | grep -q "Up" && echo "✅ Grafana: Running (http://localhost:3000)" || echo "❌ Grafana: Not running"
+	@cd deployment/docker && docker-compose -f docker-compose.jupyter.yml ps jupyter 2>/dev/null | grep -q "Up" && echo "✅ Jupyter: Running (http://localhost:8888)" || echo "❌ Jupyter: Not running"
+
+services-logs:
+	@echo "📈 Showing logs from all running services..."
+	@cd deployment/docker && \
+	COMPOSE_FILES="-f docker-compose.yml"; \
+	docker-compose -f docker-compose.grafana.yml ps grafana 2>/dev/null | grep -q "Up" && COMPOSE_FILES="$$COMPOSE_FILES -f docker-compose.grafana.yml" || true; \
+	docker-compose -f docker-compose.jupyter.yml ps jupyter 2>/dev/null | grep -q "Up" && COMPOSE_FILES="$$COMPOSE_FILES -f docker-compose.jupyter.yml" || true; \
+	eval "docker-compose $$COMPOSE_FILES logs --tail=50 -f"
+
+services-stop-all:
+	@echo "🛑 Stopping all services..."
+	@cd deployment/docker && docker-compose -f docker-compose.yml -f docker-compose.grafana.yml -f docker-compose.jupyter.yml down 2>/dev/null || true
+	@echo "✅ All services stopped"
+
+services-restart-all:
+	@echo "🔄 Restarting all running services..."
+	@cd deployment/docker && \
+	COMPOSE_FILES="-f docker-compose.yml"; \
+	docker-compose -f docker-compose.grafana.yml ps grafana 2>/dev/null | grep -q "Up" && COMPOSE_FILES="$$COMPOSE_FILES -f docker-compose.grafana.yml" || true; \
+	docker-compose -f docker-compose.jupyter.yml ps jupyter 2>/dev/null | grep -q "Up" && COMPOSE_FILES="$$COMPOSE_FILES -f docker-compose.jupyter.yml" || true; \
+	eval "docker-compose $$COMPOSE_FILES restart"
+	@echo "✅ All services restarted"
