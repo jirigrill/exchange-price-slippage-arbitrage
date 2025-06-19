@@ -1,4 +1,4 @@
-.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone grafana-up grafana-down grafana-logs jupyter-up jupyter-down jupyter-logs jupyter-restart services-status services-stop-all services-logs services-restart-all
+.PHONY: help install run test test-unit test-integration test-coverage format lint fix clean docker-build docker-run docker-deploy telegram-test db-up db-down db-logs db-reset db-test db-ensure db-connect db-timezone grafana-up grafana-down grafana-logs jupyter-up jupyter-down jupyter-logs jupyter-restart analytics-install services-status services-stop-all services-logs services-restart-all
 
 # Default target
 help:
@@ -36,6 +36,7 @@ help:
 	@echo "  Note: 'make run' auto-starts database if enabled"
 	@echo ""
 	@echo "Analytics (Optional):"
+	@echo "  analytics-install Install Python packages for Jupyter analytics"
 	@echo "  grafana-up       Start Grafana dashboard for data analysis"
 	@echo "  grafana-down     Stop Grafana"
 	@echo "  grafana-logs     View Grafana logs"
@@ -218,6 +219,24 @@ jupyter-logs:
 jupyter-restart:
 	make jupyter-down
 	make jupyter-up
+
+# Analytics requirements installation
+analytics-install:
+	@echo "📊 Installing analytics packages for Jupyter notebooks..."
+	@if [ -f "analytics/requirements.txt" ]; then \
+		echo "📦 Installing from analytics/requirements.txt..."; \
+		uv pip install -r analytics/requirements.txt; \
+		echo "✅ Analytics packages installed successfully"; \
+	else \
+		echo "📦 Installing common analytics packages..."; \
+		uv pip install pandas numpy matplotlib seaborn plotly jupyter scipy scikit-learn; \
+		echo "✅ Common analytics packages installed"; \
+	fi
+	@echo ""
+	@echo "🔗 Ready for analytics! You can now:"
+	@echo "   1. Run 'make jupyter-up' to start Jupyter notebooks"
+	@echo "   2. Open http://localhost:8888 in your browser"
+	@echo "   3. Navigate to analytics/notebooks/ for existing analysis"
 
 # Service management commands
 services-status:
