@@ -493,9 +493,9 @@ class DatabaseService:
                 stats_query = """
                     SELECT
                         schemaname,
-                        tablename,
+                        relname as tablename,
                         pg_size_pretty(
-                            pg_total_relation_size(schemaname||'.'||tablename)
+                            pg_total_relation_size(schemaname||'.'||relname)
                         ) as size,
                         n_tup_ins as inserts,
                         n_tup_upd as updates,
@@ -503,7 +503,7 @@ class DatabaseService:
                     FROM pg_stat_user_tables
                     WHERE schemaname = 'public'
                     ORDER BY pg_total_relation_size(
-                        schemaname||'.'||tablename
+                        schemaname||'.'||relname
                     ) DESC
                 """
                 stats = await conn.fetch(stats_query)

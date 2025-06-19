@@ -128,9 +128,14 @@ ci: install fix lint test
 
 # Database commands
 db-up:
-	cd deployment/docker && docker-compose up -d timescaledb
-	@echo "⏳ Waiting for database to be ready..."
-	@sleep 10
+	@if [ "$$(docker ps -q -f name=arbitrage-timescaledb)" ]; then \
+		echo "✅ TimescaleDB is already running"; \
+	else \
+		echo "🚀 Starting TimescaleDB..."; \
+		cd deployment/docker && docker-compose up -d timescaledb; \
+		echo "⏳ Waiting for database to be ready..."; \
+		sleep 10; \
+	fi
 	@DATABASE_PORT=$$(uv run python -c "from config.settings import DATABASE_PORT; print(DATABASE_PORT)") && \
 	echo "✅ TimescaleDB is running on port $$DATABASE_PORT"
 
@@ -143,9 +148,15 @@ db-logs:
 db-reset:
 	@echo "⚠️  This will delete all database data! Press Ctrl+C to cancel..."
 	@sleep 5
-	cd deployment/docker && docker-compose down timescaledb
+	@echo "🛑 Stopping and removing TimescaleDB container..."
+	docker stop arbitrage-timescaledb 2>/dev/null || true
+	docker rm arbitrage-timescaledb 2>/dev/null || true
+	docker volume rm docker_timescale_data 2>/dev/null || true
 	docker volume rm exchange-price-slippage-arbitrage_timescale_data 2>/dev/null || true
+	@echo "🚀 Starting fresh TimescaleDB..."
 	cd deployment/docker && docker-compose up -d timescaledb
+	@echo "⏳ Waiting for database to initialize..."
+	@sleep 10
 	@echo "🔄 Database reset complete"
 
 db-test: db-up

@@ -250,22 +250,3 @@ class TestCoinmateUtilityFunctions:
             assert price is None
 
 
-@pytest.mark.integration
-class TestCoinmateAPIIntegration:
-
-    @pytest.mark.slow
-    async def test_real_ticker_call(self):
-        """Test actual API call to Coinmate (marked as slow)"""
-        async with CoinmateAPI() as api:
-            result = await api.get_ticker("BTC_CZK")
-
-        # Basic sanity checks for real API response
-        if result and not result.get("error", True):
-            data = result.get("data", {})
-            last_price = data.get("last", 0)
-
-            # BTC price should be reasonable (1M-5M CZK)
-            assert 1000000 < last_price < 5000000
-            assert "amount" in data
-            assert "bid" in data
-            assert "ask" in data

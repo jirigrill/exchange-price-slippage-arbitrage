@@ -329,13 +329,13 @@ ORDER BY last_occurrence DESC;
 -- Check table sizes and row counts
 SELECT 
     schemaname,
-    tablename,
-    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size,
+    relname as tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||relname)) as size,
     n_tup_ins as inserts,
     n_tup_del as deletes
 FROM pg_stat_user_tables 
 WHERE schemaname = 'public'
-ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+ORDER BY pg_total_relation_size(schemaname||'.'||relname) DESC;
 
 -- View TimescaleDB chunk information
 SELECT 
