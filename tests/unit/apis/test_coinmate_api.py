@@ -154,6 +154,59 @@ class TestCoinmateAPI:
         with pytest.raises(ValueError, match="Private key required"):
             api._generate_signature("123")
 
+    @patch("time.time", return_value=1703254800)
+    @patch("src.apis.coinmate.api.CoinmateAPI._generate_signature")
+    async def test_get_trading_fees_success(self, mock_signature, mock_time):
+        """Test successful trading fees retrieval"""
+        mock_signature.return_value = "TEST_SIGNATURE"
+
+        mock_fees_response = {
+            "error": False,
+            "data": {
+                "maker": 0.35,
+                "taker": 0.5,
+                "timestamp": 1703254800
+            }
+        }
+
+        with aioresponses() as m:
+            m.post("https://coinmate.io/api/traderFees", payload=mock_fees_response)
+
+            async with CoinmateAPI("test_key", "test_secret", "test_client") as api:
+                result = await api.get_trading_fees("BTC_EUR")
+
+            assert result == 0.5
+            mock_signature.assert_called_once()
+
+    @patch("time.time", return_value=1703254800)
+    @patch("src.apis.coinmate.api.CoinmateAPI._generate_signature")
+    async def test_get_trading_fees_pair_not_found(self, mock_signature, mock_time):
+        """Test trading fees retrieval when currency pair is not found"""
+        mock_signature.return_value = "TEST_SIGNATURE"
+
+        mock_fees_response = {
+            "error": False,
+            "data": {
+                "maker": 0.35,
+                "timestamp": 1703254800
+            }
+        }
+
+        with aioresponses() as m:
+            m.post("https://coinmate.io/api/traderFees", payload=mock_fees_response)
+
+            async with CoinmateAPI("test_key", "test_secret", "test_client") as api:
+                result = await api.get_trading_fees("BTC_EUR")
+
+            assert result is None
+
+    async def test_get_trading_fees_no_credentials(self):
+        """Test trading fees retrieval without credentials"""
+        async with CoinmateAPI() as api:
+            result = await api.get_trading_fees("BTC_EUR")
+
+        assert result is None
+
 
 @pytest.mark.unit
 class TestCoinmateUtilityFunctions:

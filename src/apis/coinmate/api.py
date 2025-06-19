@@ -39,24 +39,17 @@ class CoinmateAPI(BaseExchangeAPI):
             await self.session.close()
 
     def _generate_signature(self, nonce: str) -> str:
-        """Generate HMAC-SHA256 signature for authenticated requests based on working code"""
+        """Generate HMAC-SHA256 signature for authenticated requests"""
         if not self.api_secret:
             raise ValueError("Private key required for authenticated requests")
 
         # Create message string: nonce + clientId + publicKey
-        message = f"{nonce}{self.client_id}{self.api_key}"
-
-        # Generate signature using private key (note: privateKey used directly, not UTF-8 encoded)
-        dig = hmac.new(
-            self.api_secret.encode("utf-8"),  # Private key as bytes
-            msg=message.encode("utf-8"),  # Message as bytes
-            digestmod=hashlib.sha256,
+        message = bytes(f"{nonce}{self.client_id}{self.api_key}", encoding="utf-8")
+        private_key_bytes = bytes(self.api_secret, encoding="utf-8")
+        signature = hmac.new(
+            private_key_bytes, message, digestmod=hashlib.sha256
         ).hexdigest()
-
-        # Convert to bytes then uppercase (matching working implementation)
-        signature = dig.encode("utf-8").upper().decode("utf-8")
-
-        return signature
+        return signature.upper()
 
     def get_exchange_name(self) -> str:
         """Get the name of this exchange"""
@@ -80,8 +73,8 @@ class CoinmateAPI(BaseExchangeAPI):
             if not all([self.api_key, self.api_secret, self.client_id]):
                 raise ValueError("API credentials required for authenticated requests")
 
-            # Use centiseconds for nonce (time.time() * 100) as in working implementation
-            nonce = str(int(time.time() * 100))
+            # Use seconds for nonce as in signature.py
+            nonce = str(int(time.time()))
             signature = self._generate_signature(nonce)
 
             data = data or {}
@@ -167,23 +160,22 @@ class CoinmateAPI(BaseExchangeAPI):
 
         try:
             endpoint = "traderFees"
-            # This endpoint requires authentication but may not be available
+            # Send currencyPair - API returns fees for the specific pair
+            data = {"currencyPair": currency_pair}
             fees_data = await self._make_request(
-                endpoint, "POST", {}, auth_required=True
+                endpoint, "POST", data, auth_required=True
             )
 
             if fees_data and not fees_data.get("error", True):
                 data = fees_data.get("data", {})
 
-                # Look for maker fee for the specific currency pair
-                # Expected format: {"BTC_CZK": {"maker": 0.35, "taker": 0.5}}
-                pair_fees = data.get(currency_pair)
-                if pair_fees and "maker" in pair_fees:
-                    maker_fee = pair_fees["maker"]
-                    return float(maker_fee)
+                # API returns fees directly: {"maker": 0.35, "taker": 0.5, "timestamp": ...}
+                if "taker" in data:
+                    taker_fee = data["taker"]
+                    return float(taker_fee)
                 else:
                     log_with_timestamp(
-                        f"⚠ No trading fees found for {currency_pair} in Coinmate API"
+                        f"⚠ No taker fee found for {currency_pair} in Coinmate API response: {data}"
                     )
                     return None
             else:

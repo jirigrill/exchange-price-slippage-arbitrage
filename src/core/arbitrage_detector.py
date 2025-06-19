@@ -215,7 +215,11 @@ class ArbitrageDetector:
                 if exchange == "kraken":
                     return await api.get_trading_fees("BTCUSD")
                 elif exchange == "coinmate":
-                    return await api.get_trading_fees("BTC_CZK")
+                    # Try BTC_EUR first (as shown in working curl), fallback to BTC_CZK
+                    fee = await api.get_trading_fees("BTC_EUR")
+                    if fee is None:
+                        fee = await api.get_trading_fees("BTC_CZK")
+                    return fee
 
         except Exception as e:
             log_with_timestamp(f"⚠ Failed to fetch {exchange} fees: {e}")
