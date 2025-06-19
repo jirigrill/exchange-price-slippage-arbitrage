@@ -28,5 +28,5 @@ ipywidgets==8.1.1
 # Crypto analysis (optional)
 ccxt==4.1.78
 
-# Performance
-numba==0.58.1
+# Performance (commented out due to LLVM build issues on some systems)
+# numba==0.58.1
